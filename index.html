@@ -2815,13 +2815,39 @@ function injectAllAds() {
 function injectAdsForSlot(slot, pos) {
   const matching = adsCache.filter(a => a.position === pos);
   if (matching.length) {
-    slot.innerHTML = matching.map(a => a.htmlCode).join('');
+    slot.innerHTML = '';
     slot.style.display = 'block';
-    // Header special case
     if (pos === 'header') {
       document.getElementById('ad-header').style.display = 'block';
     }
+    matching.forEach(ad => {
+      executeAdCode(slot, ad.htmlCode);
+    });
   }
+}
+
+function executeAdCode(container, htmlCode) {
+  // Create a temp div to parse the HTML
+  const temp = document.createElement('div');
+  temp.innerHTML = htmlCode;
+
+  // Copy all nodes, re-creating script tags so they execute
+  Array.from(temp.childNodes).forEach(node => {
+    if (node.nodeName === 'SCRIPT') {
+      const script = document.createElement('script');
+      // Copy all attributes (src, type, etc.)
+      Array.from(node.attributes).forEach(attr => {
+        script.setAttribute(attr.name, attr.value);
+      });
+      // Copy inline script content
+      if (node.textContent) {
+        script.textContent = node.textContent;
+      }
+      container.appendChild(script);
+    } else {
+      container.appendChild(node.cloneNode(true));
+    }
+  });
 }
 
 // ================================================================
