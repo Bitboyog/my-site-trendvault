@@ -1,0 +1,3228 @@
+<!doctype html>
+<html lang="en"> 
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>TrendVault — YouTube Trend Analyzer</title> 
+  <link rel="preconnect" href="https://fonts.googleapis.com"> 
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500&amp;display=swap" rel="stylesheet"> <!-- Firebase SDKs --> 
+  <script type="module">
+  // ============================================================
+  // 🔑 STEP 1: PASTE YOUR FIREBASE CONFIG HERE
+  // ============================================================
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, deleteDoc, query, orderBy, limit, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyDMkNvL8-acZM4S-WJAAsaOLPpGvbd-zuM",
+  authDomain: "trendify-3be80.firebaseapp.com",
+  projectId: "trendify-3be80",
+  storageBucket: "trendify-3be80.firebasestorage.app",
+  messagingSenderId: "600918618524",
+  appId: "1:600918618524:web:0badae45fd318c66ea1859"
+};                   // 🔑 Replace this  
+
+  // ============================================================
+  // 🔑 STEP 2: PASTE YOUR YOUTUBE DATA API v3 KEY HERE
+  // ============================================================
+  window.YT_API_KEY = "AIzaSyAdI5knddLloKxxAdW0mQ2ZVZ5jPuHCE_M"; // 🔑 Replace this
+
+  // ============================================================
+  // 👑 ADMIN CREDENTIALS (email must exist in Firebase Auth)
+  // ============================================================
+  window.ADMIN_EMAIL = "mopicsgiggs@gmail.com";     // 🔑 Change to your admin email
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Expose globally
+  window.__auth = auth;
+  window.__db = db;
+  window.__fbModules = {
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
+    doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs,
+    deleteDoc, query, orderBy, limit, where, serverTimestamp
+  };
+
+  // Fire init event
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      document.dispatchEvent(new Event("firebaseReady"));
+    });
+  } else {
+    setTimeout(() => document.dispatchEvent(new Event("firebaseReady")), 100);
+  }
+</script> 
+  <style>
+/* ================================================================
+   ROOT VARIABLES & RESET
+================================================================ */
+:root {
+  /* LIGHT MODE — Pure white liquid glass, blue only */
+  --bg-primary: #f0f5ff;
+  --bg-secondary: #f8faff;
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-bg-light: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(59, 130, 246, 0.15);
+  --glass-border-bright: rgba(59, 130, 246, 0.35);
+  --neon-purple: #2563eb;
+  --neon-blue: #0ea5e9;
+  --neon-purple-glow: rgba(37, 99, 235, 0.2);
+  --neon-blue-glow: rgba(14, 165, 233, 0.25);
+  --text-primary: #0c1a2e;
+  --text-secondary: rgba(12, 26, 46, 0.7);
+  --text-muted: rgba(12, 26, 46, 0.4);
+  --accent-gradient: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+  --card-blur: blur(24px);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-display: 'Orbitron', monospace;
+  --font-ui: 'Rajdhani', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glass-intensity: 24px;
+  --accent-color: #0ea5e9;
+  --font-size-base: 15px;
+  --shadow: 0 8px 32px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(0,0,0,0.06);
+  --reflection: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.05) 100%);
+}
+
+/* DARK MODE */
+body.dark-mode {
+  --bg-primary: #03080f;
+  --bg-secondary: #060d1a;
+  --glass-bg: rgba(8, 20, 50, 0.55);
+  --glass-bg-light: rgba(14, 30, 70, 0.35);
+  --glass-border: rgba(14, 165, 233, 0.18);
+  --glass-border-bright: rgba(14, 165, 233, 0.4);
+  --neon-purple: #38bdf8;
+  --neon-blue: #0ea5e9;
+  --neon-purple-glow: rgba(56, 189, 248, 0.4);
+  --neon-blue-glow: rgba(14, 165, 233, 0.5);
+  --text-primary: #f0f9ff;
+  --text-secondary: rgba(186, 230, 253, 0.8);
+  --text-muted: rgba(147, 197, 253, 0.5);
+  --accent-gradient: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --reflection: linear-gradient(135deg, rgba(14,165,233,0.15) 0%, rgba(255,255,255,0.03) 100%);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 15%, rgba(186, 230, 253, 0.7) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 85% 85%, rgba(147, 197, 253, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 30%, rgba(224, 242, 254, 0.6) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+}
+
+body.dark-mode::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(14, 100, 200, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 90% 80%, rgba(0, 120, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(14, 165, 233, 0.07) 0%, transparent 70%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,195,255,0.02) 0px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(0,195,255,0.02) 0px, transparent 1px, transparent 40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes bgPulse {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* ================================================================
+   GLASS COMPONENTS
+================================================================ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-intensity)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-intensity)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-intensity)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-intensity)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 20px;
+  transition: var(--transition);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  border-radius: 16px 16px 0 0;
+}
+
+.glass-card:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: 0 0 30px rgba(0, 195, 255, 0.1), 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+.neon-border {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.neon-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--accent-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* ================================================================
+   SCREEN SYSTEM
+================================================================ */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.screen.active { display: flex; flex-direction: column; }
+
+/* Auth screens centered */
+.screen-auth {
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* App screens with nav */
+.screen-app {
+  padding-top: 70px;
+}
+
+/* ================================================================
+   DUST ANIMATION (Avengers Endgame Effect)
+================================================================ */
+.dust-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+@keyframes dustParticle {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  30%  { opacity: 0.8; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.1) rotate(var(--rot)); opacity: 0; }
+}
+
+.dust-out {
+  animation: dustFadeOut 0.9s ease-out forwards;
+}
+
+@keyframes dustFadeOut {
+  0%   { opacity: 1; filter: blur(0); }
+  40%  { opacity: 0.6; filter: blur(1px); }
+  100% { opacity: 0; filter: blur(8px) brightness(2); }
+}
+
+/* ================================================================
+   NAVIGATION BAR
+================================================================ */
+#navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 2px 20px rgba(14,165,233,0.08), inset 0 -1px 0 rgba(255,255,255,0.6);
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 900;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  letter-spacing: 2px;
+  text-shadow: none;
+  flex-shrink: 0;
+}
+
+.nav-search-bar {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  max-width: 700px;
+}
+
+.nav-search-group {
+  flex: 1;
+  display: flex;
+  gap: 0;
+}
+
+.nav-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  padding: 8px 14px;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+body.dark-mode .nav-input {
+  background: rgba(8, 20, 60, 0.6);
+  color: #f0f9ff;
+}
+.nav-input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 12px var(--neon-blue-glow);
+}
+.nav-input::placeholder { color: var(--text-muted); }
+
+.nav-btn {
+  background: var(--accent-gradient);
+  border: none;
+  border-radius: 0 10px 10px 0;
+  padding: 8px 14px;
+  color: white;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+.nav-btn:hover { opacity: 0.85; box-shadow: 0 0 16px var(--neon-blue-glow); }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.nav-icon-btn {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 10px;
+  padding: 7px 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: var(--transition);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+.nav-icon-btn:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+  box-shadow: 0 0 12px rgba(14,165,233,0.25);
+  background: rgba(255,255,255,0.85);
+}
+
+
+body.dark-mode .nav-icon-btn {
+  background: rgba(14,30,70,0.5);
+  color: rgba(186,230,253,0.8);
+}
+.nav-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 0 16px var(--neon-blue-glow);
+  flex-shrink: 0;
+}
+
+
+body.dark-mode #navbar {
+  background: rgba(3, 8, 20, 0.8);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+}
+/* ================================================================
+   AUTH PAGES
+================================================================ */
+.auth-box {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 24px;
+  padding: 44px 40px;
+  box-shadow: 0 20px 60px rgba(14,165,233,0.1), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 24px 24px 0 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-logo {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 900;
+  text-align: center;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+  letter-spacing: 3px;
+}
+
+
+body.dark-mode .auth-box {
+  background: rgba(6, 15, 35, 0.85);
+  border-color: rgba(14, 165, 233, 0.25);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(14,165,233,0.08);
+}
+.auth-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  margin-bottom: 32px;
+  letter-spacing: 1px;
+}
+
+.form-group { margin-bottom: 18px; }
+
+.form-label {
+  display: block;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.form-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: var(--transition);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+}
+
+body.dark-mode .form-input {
+  background: rgba(8, 20, 60, 0.6);
+  border-color: rgba(14,165,233,0.18);
+  color: #f0f9ff;
+}
+.form-input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 20px var(--neon-blue-glow), inset 0 0 10px rgba(0,195,255,0.05);
+}
+.form-input::placeholder { color: var(--text-muted); }
+
+.btn-primary {
+  width: 100%;
+  background: var(--accent-gradient);
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  color: white;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left 0.5s;
+}
+.btn-primary:hover::before { left: 100%; }
+.btn-primary:hover {
+  box-shadow: 0 0 30px var(--neon-blue-glow), 0 0 60px rgba(179,71,255,0.3);
+  transform: translateY(-1px);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+}
+.auth-switch a {
+  color: var(--neon-blue);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+}
+.auth-switch a:hover { color: var(--neon-purple); text-shadow: 0 0 12px var(--neon-purple-glow); }
+
+.error-msg {
+  background: rgba(255, 60, 100, 0.15);
+  border: 1px solid rgba(255, 60, 100, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ff6b8a;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  margin-top: 12px;
+  display: none;
+}
+.error-msg.show { display: block; }
+
+/* ================================================================
+   DASHBOARD
+================================================================ */
+#screen-dashboard .content { padding: 24px; }
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--neon-blue);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--glass-border-bright), transparent);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: 0 4px 16px rgba(14,165,233,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, #1d4ed8, #0ea5e9);
+}
+
+body.dark-mode .stat-card {
+  background: rgba(8, 20, 50, 0.6);
+  border-color: rgba(14,165,233,0.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.stat-card:hover { border-color: var(--glass-border-bright); transform: translateY(-3px); }
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.announcement-bar {
+  background: linear-gradient(135deg, rgba(179,71,255,0.1), rgba(0,195,255,0.1));
+  border: 1px solid rgba(179,71,255,0.3);
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: none;
+}
+.announcement-bar.show { display: block; }
+
+/* ================================================================
+   RESULTS GRIDS
+================================================================ */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.video-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: var(--transition);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(14,165,233,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+body.dark-mode .video-card {
+  background: rgba(8, 20, 50, 0.6);
+  border-color: rgba(14,165,233,0.15);
+}
+.video-card:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: 0 0 24px rgba(0,195,255,0.12);
+  transform: translateY(-4px);
+}
+
+.video-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+}
+.video-thumb-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: linear-gradient(135deg, rgba(8,20,60,0.8), rgba(30,60,120,0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.video-info { padding: 14px; }
+.video-title {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.video-meta {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.video-meta span { display: flex; align-items: center; gap: 4px; }
+
+.channel-name {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--neon-blue);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* ================================================================
+   TAGS / KEYWORDS
+================================================================ */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tag {
+  background: rgba(29, 78, 216, 0.08);
+  border: 1px solid rgba(29, 78, 216, 0.2);
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+  cursor: default;
+}
+.tag:hover { background: rgba(29, 78, 216, 0.15); box-shadow: 0 0 10px rgba(29,78,216,0.2); }
+.tag.blue {
+  background: rgba(0,195,255,0.1);
+  border-color: rgba(0,195,255,0.3);
+  color: var(--neon-blue);
+}
+.tag.blue:hover { background: rgba(0,195,255,0.2); box-shadow: 0 0 10px var(--neon-blue-glow); }
+
+/* ================================================================
+   CHANNEL PROFILE SECTION
+================================================================ */
+.channel-banner {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 16px 16px 0 0;
+  display: block;
+  background: linear-gradient(135deg, #0a0a2e, #1a0a3e);
+}
+
+.channel-profile-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-radius: 0 0 16px 16px;
+  margin-bottom: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.channel-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--neon-blue);
+  box-shadow: 0 0 20px var(--neon-blue-glow);
+  object-fit: cover;
+  flex-shrink: 0;
+  margin-top: -40px;
+  background: var(--glass-bg);
+}
+
+.channel-details { flex: 1; }
+.channel-title-large {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+.channel-stats-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.channel-stat-item {
+  text-align: center;
+}
+.channel-stat-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--neon-blue);
+}
+.channel-stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ================================================================
+   ADMIN PANEL
+================================================================ */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  min-height: calc(100vh - 70px);
+}
+
+.admin-sidebar {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  padding: 24px 0;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+
+body.dark-mode .admin-sidebar {
+  background: rgba(4, 10, 28, 0.85);
+}
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+  letter-spacing: 0.5px;
+}
+.admin-nav-item:hover, .admin-nav-item.active {
+  color: var(--neon-blue);
+  background: rgba(0,195,255,0.06);
+  border-left-color: var(--neon-blue);
+}
+
+.admin-content { padding: 24px; }
+
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+}
+.data-table th {
+  background: rgba(14,165,233,0.08);
+  border: 1px solid rgba(14,165,233,0.15);
+  padding: 10px 14px;
+  text-align: left;
+  color: #0284c7;
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.data-table td {
+  border: 1px solid rgba(14,165,233,0.1);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+  background: rgba(255,255,255,0.4);
+}
+
+body.dark-mode .data-table td {
+  background: transparent;
+  border-color: rgba(14,165,233,0.12);
+}
+.data-table tr:hover td { background: rgba(0,195,255,0.04); }
+
+/* ================================================================
+   ADS SLOTS
+================================================================ */
+.ad-slot {
+  border: 1px dashed rgba(179,71,255,0.2);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 40px;
+  position: relative;
+}
+.ad-slot:empty::after {
+  content: attr(data-position) ' ad';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(179,71,255,0.2);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ================================================================
+   SETTINGS PAGE
+================================================================ */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.settings-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(14,165,233,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+
+body.dark-mode .settings-card {
+  background: rgba(8, 20, 50, 0.6);
+  border-color: rgba(14,165,233,0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.settings-card h3 {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--neon-purple);
+  margin-bottom: 20px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+.setting-label {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.slider-input {
+  -webkit-appearance: none;
+  width: 120px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--glass-border);
+  outline: none;
+}
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--neon-blue-glow);
+}
+
+.color-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.color-option {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transition);
+}
+.color-option:hover, .color-option.selected { border-color: white; transform: scale(1.1); }
+
+/* ================================================================
+   LINKED CHANNEL PAGE
+================================================================ */
+.link-input-area {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.link-input-field {
+  flex: 1;
+  min-width: 200px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: var(--transition);
+}
+.link-input-field:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 16px var(--neon-blue-glow);
+}
+.link-input-field::placeholder { color: var(--text-muted); }
+
+.btn-secondary {
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: var(--neon-blue);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-secondary:hover {
+  background: rgba(0,195,255,0.1);
+  box-shadow: 0 0 20px var(--neon-blue-glow);
+}
+
+/* ================================================================
+   LOADING / SPINNER
+================================================================ */
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(240,245,255,0.8);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  flex-direction: column;
+  gap: 20px;
+}
+
+body.dark-mode .loader-overlay {
+  background: rgba(3,8,15,0.85);
+}
+.loader-overlay.show { display: flex; }
+
+.spinner {
+  width: 50px; height: 50px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--neon-blue);
+  border-right-color: var(--neon-purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loader-text {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  color: #0284c7;
+  text-transform: uppercase;
+}
+
+/* ================================================================
+   TOAST NOTIFICATIONS
+================================================================ */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: #0c1a2e;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 240px;
+  border-left: 3px solid #0ea5e9;
+  animation: toastIn 0.3s ease, toastOut 0.4s ease 2.6s forwards;
+  pointer-events: auto;
+  box-shadow: 0 8px 32px rgba(14,165,233,0.1), 0 2px 8px rgba(0,0,0,0.08);
+}
+
+body.dark-mode .toast {
+  background: rgba(6, 15, 40, 0.95);
+  color: #f0f9ff;
+  border-color: rgba(14,165,233,0.25);
+}
+.toast.success { border-left-color: #00ff88; }
+.toast.error { border-left-color: #ff4466; }
+.toast.warning { border-left-color: #ffaa00; }
+
+@keyframes toastIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(110%); opacity: 0; }
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media (max-width: 768px) {
+  #navbar { padding: 0 12px; }
+  .nav-search-bar { display: none; }
+  .nav-logo { font-size: 1rem; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-sidebar { position: static; height: auto; }
+  .auth-box { padding: 32px 24px; }
+  .channel-profile-section { flex-direction: column; }
+  .channel-avatar { margin-top: 0; }
+  .results-grid { grid-template-columns: 1fr; }
+}
+
+/* ================================================================
+   SCROLLBAR
+================================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+
+/* ================================================================
+   UTILITY
+================================================================ */
+.text-gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-10 { gap: 10px; }
+.gap-16 { gap: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mt-8 { margin-top: 8px; }
+.p-16 { padding: 16px; }
+.p-24 { padding: 24px; }
+.hidden { display: none !important; }
+.w-full { width: 100%; }
+.rounded { border-radius: 12px; }
+
+.content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.page-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* Mobile search bar (below nav) */
+.mobile-search {
+  display: none;
+  padding: 12px 16px;
+  gap: 10px;
+  background: rgba(3,5,15,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  flex-direction: column;
+}
+@media (max-width: 768px) {
+  .screen-app { padding-top: 128px; }
+  .mobile-search { display: flex; }
+  .mobile-search .nav-search-group { display: flex; }
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+  margin: 24px 0;
+}
+
+/* Badge */
+.badge {
+  background: var(--accent-gradient);
+  border-radius: 100px;
+  padding: 2px 10px;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: white;
+  vertical-align: middle;
+}
+.badge.admin { background: linear-gradient(135deg, #ff4499, #ff8800); }
+
+/* Upload freq bar */
+.freq-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent-gradient);
+  transition: width 1s ease;
+  box-shadow: 0 0 12px var(--neon-blue-glow);
+}
+.freq-bar-container {
+  height: 8px;
+  background: var(--glass-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Two-col layout for channel analysis */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* Admin tag */
+.admin-badge {
+  background: linear-gradient(135deg, #ff4499, #ff8800);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Textarea */
+.form-textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  outline: none;
+  resize: vertical;
+  min-height: 90px;
+  transition: var(--transition);
+}
+.form-textarea:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 16px var(--neon-blue-glow);
+}
+.form-textarea::placeholder { color: var(--text-muted); }
+
+/* Select */
+.form-select {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+body.dark-mode .form-select {
+  background: rgba(8,20,60,0.7);
+  color: #f0f9ff;
+}
+body.dark-mode .form-select option { background: #060d1a; color: #f0f9ff; }
+.form-select:focus { border-color: var(--neon-blue); }
+.form-select option { background: #ffffff; color: #0c1a2e; }
+
+/* Linked channel list */
+.linked-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  transition: var(--transition);
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(14,165,233,0.05), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+body.dark-mode .linked-list-item {
+  background: rgba(8, 20, 50, 0.55);
+  border-color: rgba(14,165,233,0.15);
+}
+.linked-list-item:hover { border-color: var(--glass-border-bright); }
+
+.btn-sm {
+  background: rgba(255,68,102,0.15);
+  border: 1px solid rgba(255,68,102,0.3);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #ff6b8a;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-sm:hover { background: rgba(255,68,102,0.25); }
+.btn-sm.blue {
+  background: rgba(0,195,255,0.1);
+  border-color: rgba(0,195,255,0.3);
+  color: var(--neon-blue);
+}
+.btn-sm.blue:hover { background: rgba(0,195,255,0.2); }
+
+/* ================================================================
+   MOBILE OPTIMIZATIONS
+================================================================ */
+@media (max-width: 480px) {
+  .content-wrapper { padding: 12px; }
+  .page-title { font-size: 1.1rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-value { font-size: 1.4rem; }
+  .glass-card { padding: 14px; }
+  .auth-box { padding: 28px 20px; border-radius: 20px; }
+  .auth-logo { font-size: 1.4rem; }
+  .btn-primary { padding: 13px; font-size: 0.8rem; }
+  .form-input { padding: 11px 14px; font-size: 0.88rem; }
+  .results-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .nav-logo { font-size: 0.9rem; letter-spacing: 1px; }
+  .nav-icon-btn { padding: 6px 8px; font-size: 0.72rem; }
+  
+body.dark-mode .nav-icon-btn {
+  background: rgba(14,30,70,0.5);
+  color: rgba(186,230,253,0.8);
+}
+.nav-avatar { width: 30px; height: 30px; font-size: 0.8rem; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .video-title { font-size: 0.85rem; }
+  .tags-container { gap: 6px; }
+  .tag { font-size: 0.7rem; padding: 4px 10px; }
+  .channel-title-large { font-size: 1.1rem; }
+  .link-input-area { flex-direction: column; }
+  .data-table { font-size: 0.75rem; }
+  .data-table th, .data-table td { padding: 7px 8px; }
+}
+
+/* Touch-friendly tap targets */
+@media (hover: none) {
+  .nav-icon-btn, .btn-primary, .btn-secondary, .btn-sm, .nav-btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .glass-card:hover { transform: none; }
+  
+body.dark-mode .video-card {
+  background: rgba(8, 20, 50, 0.6);
+  border-color: rgba(14,165,233,0.15);
+}
+.video-card:hover { transform: none; }
+  
+body.dark-mode .stat-card {
+  background: rgba(8, 20, 50, 0.6);
+  border-color: rgba(14,165,233,0.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.stat-card:hover { transform: none; }
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  width: 52px;
+  height: 28px;
+  position: relative;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.dark-mode-toggle::after {
+  content: '☀';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 20px;
+  text-align: center;
+}
+body.dark-mode .dark-mode-toggle::after {
+  content: '🌙';
+  left: 28px;
+}
+body.dark-mode .dark-mode-toggle {
+  background: rgba(0,195,255,0.1);
+  border-color: rgba(0,195,255,0.3);
+}
+</style> 
+ </head> 
+ <body> <!-- ============================================================
+     DUST ANIMATION CANVAS
+============================================================ --> 
+  <canvas id="dust-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9998;"></canvas> <!-- ============================================================
+     LOADER
+============================================================ --> 
+  <div class="loader-overlay" id="loader"> 
+   <div class="spinner"></div> 
+   <div class="loader-text" id="loader-text">
+     Loading... 
+   </div> 
+  </div> <!-- ============================================================
+     TOAST CONTAINER
+============================================================ --> 
+  <div id="toast-container"></div> <!-- ============================================================
+     ADS: HEADER
+============================================================ --> 
+  <div id="ad-header" class="ad-slot" data-position="header" style="position:fixed;top:64px;left:0;right:0;z-index:99;display:none;"></div> <!-- ============================================================
+     NAVIGATION
+============================================================ --> 
+  <nav id="navbar" style="display:none;"> 
+   <div class="nav-logo">
+     ⚡ TRENDVAULT 
+   </div> 
+   <div class="nav-search-bar"> 
+    <div class="nav-search-group"> 
+     <input class="nav-input" id="nav-niche-input" placeholder="Search niche..." type="text"> <button class="nav-btn" onclick="doNicheSearch()">NICHE</button> 
+    </div> 
+    <div class="nav-search-group"> 
+     <input class="nav-input" id="nav-channel-input" placeholder="Search channel..." type="text"> <button class="nav-btn" onclick="doChannelSearch()">CHANNEL</button> 
+    </div> 
+   </div> 
+   <div class="nav-actions"><div class="dark-mode-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode"></div> <button class="nav-icon-btn" onclick="showScreen('screen-link')">🔗 LINK</button> <button class="nav-icon-btn" onclick="showScreen('screen-settings')">⚙</button> 
+    <div class="nav-avatar" id="nav-avatar" title="Account" onclick="showUserMenu()">
+      U 
+    </div> <button class="nav-icon-btn" onclick="doSignOut()" style="color:rgba(255,100,100,0.8)">EXIT</button> 
+   </div> 
+  </nav> <!-- Mobile Search Bar --> 
+  <div class="mobile-search" id="mobile-search" style="display:none; position:fixed;top:64px;left:0;right:0;z-index:98;"> 
+   <div class="nav-search-group"> 
+    <input class="nav-input" id="mob-niche-input" placeholder="Search niche..." type="text" style="border-radius:10px 0 0 10px;"> <button class="nav-btn" onclick="doNicheSearch(true)">NICHE</button> 
+   </div> 
+   <div class="nav-search-group"> 
+    <input class="nav-input" id="mob-channel-input" placeholder="Search channel..." type="text" style="border-radius:10px 0 0 10px;"> <button class="nav-btn" onclick="doChannelSearch(true)">CHANNEL</button> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: LOGIN
+============================================================ --> 
+  <div class="screen screen-auth active" id="screen-login"> 
+   <div class="auth-box"> 
+    <div class="auth-logo">
+      TRENDVAULT 
+    </div> 
+    <div class="auth-subtitle">
+      YouTube Trend Intelligence 
+    </div> 
+    <div class="form-group"> <label class="form-label">Email</label> 
+     <input class="form-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email"> 
+    </div> 
+    <div class="form-group"> <label class="form-label">Password</label> 
+     <input class="form-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"> 
+    </div> 
+    <div id="login-error" class="error-msg"></div> <button class="btn-primary" onclick="doLogin()">SIGN IN</button> 
+    <div class="auth-switch">
+      Don't have an account? <a onclick="switchToSignup()">Sign Up</a> 
+    </div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: SIGNUP
+============================================================ --> 
+  <div class="screen screen-auth" id="screen-signup"> 
+   <div class="auth-box"> 
+    <div class="auth-logo">
+      TRENDVAULT 
+    </div> 
+    <div class="auth-subtitle">
+      Create Your Account 
+    </div> 
+    <div class="form-group"> <label class="form-label">Email</label> 
+     <input class="form-input" id="signup-email" type="email" placeholder="you@example.com" autocomplete="email"> 
+    </div> 
+    <div class="form-group"> <label class="form-label">Password</label> 
+     <input class="form-input" id="signup-password" type="password" placeholder="Min 6 characters" autocomplete="new-password"> 
+    </div> 
+    <div class="form-group"> <label class="form-label">Confirm Password</label> 
+     <input class="form-input" id="signup-confirm" type="password" placeholder="••••••••" autocomplete="new-password"> 
+    </div> 
+    <div id="signup-error" class="error-msg"></div> <button class="btn-primary" onclick="doSignup()">CREATE ACCOUNT</button> 
+    <div class="auth-switch">
+      Already have an account? <a onclick="switchToLogin()">Sign In</a> 
+    </div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: DASHBOARD
+============================================================ --> 
+  <div class="screen screen-app" id="screen-dashboard"> 
+   <div class="content-wrapper"> 
+    <div class="announcement-bar" id="announcement-bar"></div> 
+    <div class="ad-slot mb-16" id="ad-dashboard-top" data-position="dashboard-top"></div> 
+    <div class="page-header"> 
+     <div class="page-title">
+       MISSION CONTROL 
+     </div> 
+     <div class="page-subtitle" id="welcome-msg">
+       Welcome back, Analyst 
+     </div> 
+    </div> 
+    <div class="stats-grid"> 
+     <div class="stat-card"> 
+      <div class="stat-value" id="stat-searches">
+        0 
+      </div> 
+      <div class="stat-label">
+        Total Searches 
+      </div> 
+     </div> 
+     <div class="stat-card"> 
+      <div class="stat-value" id="stat-channels">
+        0 
+      </div> 
+      <div class="stat-label">
+        Channels Linked 
+      </div> 
+     </div> 
+     <div class="stat-card"> 
+      <div class="stat-value" id="stat-date">
+        — 
+      </div> 
+      <div class="stat-label">
+        Member Since 
+      </div> 
+     </div> 
+     <div class="stat-card"> 
+      <div class="stat-value" id="stat-last">
+        — 
+      </div> 
+      <div class="stat-label">
+        Last Login 
+      </div> 
+     </div> 
+    </div> 
+    <div class="section-title">
+      Quick Search 
+    </div> 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;"> 
+     <div class="glass-card"> 
+      <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--neon-blue);margin-bottom:12px;">
+        🔍 NICHE EXPLORER 
+      </div> 
+      <div class="nav-search-group" style="margin-bottom:0;"> 
+       <input class="nav-input" id="dash-niche-input" placeholder="e.g. gaming, tech reviews..." style="border-radius:10px 0 0 10px;padding:12px 16px;font-size:0.9rem;"> <button class="nav-btn" style="font-size:0.85rem;padding:12px 18px;" onclick="doNicheSearch(false, 'dash')">SEARCH</button> 
+      </div> 
+     </div> 
+     <div class="glass-card"> 
+      <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--neon-purple);margin-bottom:12px;">
+        📺 CHANNEL RADAR 
+      </div> 
+      <div class="nav-search-group"> 
+       <input class="nav-input" id="dash-channel-input" placeholder="Channel name..." style="border-radius:10px 0 0 10px;padding:12px 16px;font-size:0.9rem;"> <button class="nav-btn" style="font-size:0.85rem;padding:12px 18px;" onclick="doChannelSearch(false, 'dash')">SEARCH</button> 
+      </div> 
+     </div> 
+    </div> 
+    <div class="section-title">
+      Recent Searches 
+    </div> 
+    <div id="recent-searches-list" style="display:flex;flex-direction:column;gap:10px;"></div> 
+    <div class="ad-slot mt-8" id="ad-dashboard-footer" data-position="footer" style="margin-top:24px;"></div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: NICHE RESULTS
+============================================================ --> 
+  <div class="screen screen-app" id="screen-niche"> 
+   <div class="content-wrapper"> 
+    <div class="page-header" style="display:flex;align-items:center;gap:16px;"> <button class="btn-sm blue" onclick="goBack()">← BACK</button> 
+     <div> 
+      <div class="page-title" id="niche-result-title">
+        Niche Results 
+      </div> 
+      <div class="page-subtitle" id="niche-result-sub">
+        Trending analysis 
+      </div> 
+     </div> 
+    </div> 
+    <div class="ad-slot mb-16" id="ad-niche-top" data-position="niche-top"></div> 
+    <div class="section-title">
+      Top Hashtags 
+    </div> 
+    <div id="niche-hashtags" class="tags-container mb-24"></div> 
+    <div class="section-title">
+      Top Keywords 
+    </div> 
+    <div id="niche-keywords" class="tags-container mb-24"></div> 
+    <div class="divider"></div> 
+    <div class="section-title">
+      Trending Videos 
+    </div> 
+    <div class="ad-slot mb-16" id="ad-niche-sidebar" data-position="sidebar"></div> 
+    <div id="niche-videos" class="results-grid"></div> 
+    <div class="ad-slot" id="ad-niche-footer" data-position="niche-footer" style="margin-top:24px;"></div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: CHANNEL RESULTS
+============================================================ --> 
+  <div class="screen screen-app" id="screen-channel"> 
+   <div class="content-wrapper"> 
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;"> <button class="btn-sm blue" onclick="goBack()">← BACK</button> 
+     <div class="page-title" id="channel-result-title">
+       Channel Analysis 
+     </div> 
+    </div> 
+    <div id="channel-banner-section"> 
+     <img id="channel-banner-img" class="channel-banner" src="" alt="Channel Banner" onerror="this.style.display='none'"> 
+     <div class="channel-profile-section"> 
+      <img id="channel-avatar-img" class="channel-avatar" src="" alt="Channel Avatar" onerror="this.src=''"> 
+      <div class="channel-details"> 
+       <div class="channel-title-large" id="channel-name-large">
+         Channel Name 
+       </div> 
+       <div style="font-family:var(--font-ui);font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;" id="channel-desc-short"></div> 
+       <div class="channel-stats-row"> 
+        <div class="channel-stat-item"> 
+         <div class="channel-stat-value" id="ch-subs">
+           — 
+         </div> 
+         <div class="channel-stat-label">
+           Subscribers 
+         </div> 
+        </div> 
+        <div class="channel-stat-item"> 
+         <div class="channel-stat-value" id="ch-views">
+           — 
+         </div> 
+         <div class="channel-stat-label">
+           Total Views 
+         </div> 
+        </div> 
+        <div class="channel-stat-item"> 
+         <div class="channel-stat-value" id="ch-videos">
+           — 
+         </div> 
+         <div class="channel-stat-label">
+           Videos 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </div> 
+    <div class="two-col" style="margin-bottom:20px;"> 
+     <div> 
+      <div class="section-title">
+        Top Hashtags 
+      </div> 
+      <div id="ch-hashtags" class="tags-container"></div> 
+     </div> 
+     <div> 
+      <div class="section-title">
+        Top Keywords 
+      </div> 
+      <div id="ch-keywords" class="tags-container"></div> 
+     </div> 
+    </div> 
+    <div class="section-title">
+      Most Used Topics 
+    </div> 
+    <div id="ch-topics" class="tags-container mb-24"></div> 
+    <div class="section-title">
+      Latest Videos 
+    </div> 
+    <div id="ch-videos" class="results-grid"></div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: LINKED CHANNEL ANALYSIS
+============================================================ --> 
+  <div class="screen screen-app" id="screen-link"> 
+   <div class="content-wrapper"> 
+    <div class="page-header"> 
+     <div class="page-title">
+       🔗 CHANNEL LINKER 
+     </div> 
+     <div class="page-subtitle">
+       Paste a YouTube channel or video link to analyze 
+     </div> 
+    </div> 
+    <div class="glass-card mb-24"> 
+     <div class="link-input-area"> 
+      <input class="link-input-field" id="link-input" placeholder="https://youtube.com/channel/... or https://youtube.com/watch?v=..."> <button class="btn-secondary" onclick="analyzeLink()">⚡ ANALYZE</button> 
+     </div> 
+    </div> 
+    <div id="link-results" style="display:none;"> 
+     <div class="two-col" style="margin-bottom:24px;"> 
+      <div class="glass-card"> 
+       <div class="section-title" style="font-size:0.7rem;">
+         Upload Frequency 
+       </div> 
+       <div id="link-freq-value" style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--neon-blue);margin-bottom:12px;">
+         — 
+       </div> 
+       <div class="freq-bar-container"> 
+        <div class="freq-bar" id="link-freq-bar" style="width:0%;"></div> 
+       </div> 
+       <div style="font-family:var(--font-ui);font-size:0.75rem;color:var(--text-muted);margin-top:8px;">
+         uploads per month estimate 
+       </div> 
+      </div> 
+      <div class="glass-card"> 
+       <div class="section-title" style="font-size:0.7rem;">
+         Growth Pattern 
+       </div> 
+       <div id="link-growth" style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;color:var(--neon-purple);margin-bottom:8px;">
+         — 
+       </div> 
+       <div style="font-family:var(--font-ui);font-size:0.8rem;color:var(--text-muted);" id="link-growth-desc"></div> 
+      </div> 
+     </div> 
+     <div class="two-col" style="margin-bottom:24px;"> 
+      <div> 
+       <div class="section-title">
+         Hashtags Used 
+       </div> 
+       <div id="link-hashtags" class="tags-container"></div> 
+      </div> 
+      <div> 
+       <div class="section-title">
+         Keywords 
+       </div> 
+       <div id="link-keywords" class="tags-container"></div> 
+      </div> 
+     </div> 
+     <div class="section-title">
+       Top Categories 
+     </div> 
+     <div id="link-categories" class="tags-container mb-24"></div> 
+    </div> 
+    <div class="section-title">
+      Saved Channels 
+    </div> 
+    <div id="linked-channels-list"></div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: SETTINGS
+============================================================ --> 
+  <div class="screen screen-app" id="screen-settings"> 
+   <div class="content-wrapper"> 
+    <div class="page-header"> 
+     <div class="page-title">
+       ⚙ SETTINGS 
+     </div> 
+     <div class="page-subtitle">
+       Customize your TrendVault experience 
+     </div> 
+    </div> 
+    <div class="settings-grid"> 
+     <div class="settings-card"> 
+      <h3>🌊 Glass Intensity</h3> 
+      <div class="setting-row"> <span class="setting-label">Blur Strength</span> 
+       <input type="range" class="slider-input" id="set-blur" min="5" max="40" value="20" oninput="applyBlur(this.value)"> 
+      </div> 
+      <div class="setting-row"> <span class="setting-label">Preview</span> 
+       <div style="width:80px;height:40px;background:var(--glass-bg);backdrop-filter:blur(var(--glass-intensity));border:1px solid var(--glass-border);border-radius:8px;"></div> 
+      </div> 
+     </div> 
+     <div class="settings-card"> 
+      <h3>🎨 Accent Color</h3> 
+      <div class="color-grid"> 
+       <div class="color-option selected" style="background:#00c3ff;" onclick="setAccent('#00c3ff','#b347ff')" title="Neon Blue"></div> 
+       <div class="color-option" style="background:#b347ff;" onclick="setAccent('#b347ff','#00c3ff')" title="Neon Purple"></div> 
+       <div class="color-option" style="background:#00ff88;" onclick="setAccent('#00ff88','#00c3ff')" title="Neon Green"></div> 
+       <div class="color-option" style="background:#ff4499;" onclick="setAccent('#ff4499','#ff8800')" title="Neon Pink"></div> 
+       <div class="color-option" style="background:#ffaa00;" onclick="setAccent('#ffaa00','#ff4499')" title="Gold"></div> 
+      </div> 
+     </div> 
+     <div class="settings-card"> 
+      <h3>📏 Font Size</h3> 
+      <div class="setting-row"> <span class="setting-label">Base Size</span> <select class="form-select" id="set-fontsize" onchange="setFontSize(this.value)"> <option value="13px">Small (13px)</option> <option value="15px" selected>Default (15px)</option> <option value="17px">Large (17px)</option> <option value="19px">Extra Large (19px)</option> </select> 
+      </div> 
+     </div> 
+     <div class="settings-card"> 
+      <h3>💾 Account</h3> 
+      <div style="font-family:var(--font-ui);font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;" id="settings-email"></div> <button class="btn-primary" style="margin-top:0;" onclick="saveSettings()">SAVE SETTINGS</button> <button class="btn-sm" style="margin-top:10px;width:100%;text-align:center;" onclick="doSignOut()">SIGN OUT</button> 
+     </div> 
+    </div> 
+   </div> 
+  </div> <!-- ============================================================
+     SCREEN: ADMIN PANEL
+============================================================ --> 
+  <div class="screen screen-app" id="screen-admin"> 
+   <div class="admin-grid"> 
+    <div class="admin-sidebar"> 
+     <div style="padding:16px 20px;font-family:var(--font-display);font-size:0.7rem;font-weight:900;letter-spacing:3px;color:var(--neon-purple);text-transform:uppercase;margin-bottom:8px;">
+       ⚡ Admin Panel 
+     </div> 
+     <div class="admin-nav-item active" onclick="showAdminSection('admin-users')">
+       👥 Users 
+     </div> 
+     <div class="admin-nav-item" onclick="showAdminSection('admin-searches')">
+       🔍 Search Logs 
+     </div> 
+     <div class="admin-nav-item" onclick="showAdminSection('admin-ads')">
+       📢 Ad Manager 
+     </div> 
+     <div class="admin-nav-item" onclick="showAdminSection('admin-announce')">
+       📣 Announcements 
+     </div> 
+     <div class="admin-nav-item" onclick="showAdminSection('admin-theme')">
+       🎨 Theme Settings 
+     </div> 
+     <div class="admin-nav-item" onclick="showAdminSection('admin-blocked')">
+       🚫 Blocked Users 
+     </div> 
+     <div style="height:1px;background:var(--glass-border);margin:16px 0;"></div> 
+     <div class="admin-nav-item" onclick="showScreen('screen-dashboard')" style="color:rgba(150,180,230,0.5);">
+       ← Dashboard 
+     </div> 
+    </div> 
+    <div class="admin-content"> <!-- Users Section --> 
+     <div class="admin-section active" id="admin-users"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        All Users 
+      </div> 
+      <div style="margin-bottom:12px;display:flex;gap:10px;"> <button class="btn-secondary" onclick="loadAdminUsers()" style="font-size:0.75rem;padding:8px 16px;">↻ REFRESH</button> 
+      </div> 
+      <div style="overflow-x:auto;"> 
+       <table class="data-table" id="users-table"> 
+        <thead> 
+         <tr> 
+          <th>Email</th> 
+          <th>Searches</th> 
+          <th>Joined</th> 
+          <th>Last Login</th> 
+          <th>Actions</th> 
+         </tr> 
+        </thead> 
+        <tbody id="users-tbody"></tbody> 
+       </table> 
+      </div> 
+     </div> <!-- Searches Section --> 
+     <div class="admin-section" id="admin-searches"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        Search Logs 
+      </div> <button class="btn-secondary" onclick="loadAdminSearches()" style="font-size:0.75rem;padding:8px 16px;margin-bottom:12px;">↻ REFRESH</button> 
+      <div style="overflow-x:auto;"> 
+       <table class="data-table"> 
+        <thead> 
+         <tr> 
+          <th>User</th> 
+          <th>Type</th> 
+          <th>Query</th> 
+          <th>Timestamp</th> 
+         </tr> 
+        </thead> 
+        <tbody id="searches-tbody"></tbody> 
+       </table> 
+      </div> 
+     </div> <!-- Ad Manager --> 
+     <div class="admin-section" id="admin-ads"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        Ad Manager 
+      </div> 
+      <div class="glass-card mb-24"> 
+       <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--neon-blue);margin-bottom:16px;">
+         ADD NEW AD 
+       </div> 
+       <div class="form-group"> <label class="form-label">Position</label> <select class="form-select" id="ad-position" style="width:100%;"> <option value="header">Header</option> <option value="footer">Footer</option> <option value="sidebar">Sidebar</option> <option value="dashboard-top">Dashboard Top</option> <option value="niche-top">Niche Results Top</option> <option value="between-results">Between Results</option> </select> 
+       </div> 
+       <div class="form-group"> <label class="form-label">Ad HTML Code</label> <textarea class="form-textarea" id="ad-html" placeholder="Paste your ad HTML here..."></textarea> 
+       </div> <button class="btn-primary" onclick="saveAd()" style="max-width:200px;">SAVE AD</button> 
+      </div> 
+      <div class="section-title">
+        Active Ads 
+      </div> 
+      <div id="ads-list"></div> 
+     </div> <!-- Announcements --> 
+     <div class="admin-section" id="admin-announce"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        Announcements 
+      </div> 
+      <div class="glass-card mb-24"> 
+       <div class="form-group"> <label class="form-label">Announcement Text</label> <textarea class="form-textarea" id="announce-text" placeholder="Enter announcement..."></textarea> 
+       </div> 
+       <div style="display:flex;gap:12px;"> <button class="btn-primary" onclick="saveAnnouncement()" style="max-width:180px;">PUBLISH</button> <button class="btn-sm" onclick="clearAnnouncement()">CLEAR</button> 
+       </div> 
+      </div> 
+      <div class="section-title">
+        Current Announcement 
+      </div> 
+      <div class="glass-card" id="current-announcement" style="color:var(--text-secondary);font-family:var(--font-ui);"></div> 
+     </div> <!-- Theme Settings --> 
+     <div class="admin-section" id="admin-theme"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        App Theme Settings 
+      </div> 
+      <div class="glass-card"> 
+       <div class="form-group"> <label class="form-label">Primary Neon Color</label> 
+        <input type="color" value="#00c3ff" id="admin-neon-blue" style="background:none;border:none;cursor:pointer;width:50px;height:32px;"> 
+       </div> 
+       <div class="form-group"> <label class="form-label">Secondary Neon Color</label> 
+        <input type="color" value="#b347ff" id="admin-neon-purple" style="background:none;border:none;cursor:pointer;width:50px;height:32px;"> 
+       </div> <button class="btn-primary" onclick="saveThemeSettings()" style="max-width:200px;">APPLY THEME</button> 
+      </div> 
+     </div> <!-- Blocked Users --> 
+     <div class="admin-section" id="admin-blocked"> 
+      <div class="page-title" style="margin-bottom:16px;">
+        Blocked Users 
+      </div> 
+      <div id="blocked-users-list"></div> 
+     </div> 
+    </div> 
+   </div> 
+  </div> <!-- ============================================================
+     JAVASCRIPT
+============================================================ --> 
+  <script>
+// ================================================================
+// GLOBAL STATE
+// ================================================================
+let currentUser = null;
+let isAdmin = false;
+let previousScreen = 'screen-dashboard';
+const screens = ['screen-login','screen-signup','screen-dashboard','screen-niche','screen-channel','screen-link','screen-settings','screen-admin'];
+
+// ================================================================
+// DUST / AVENGERS ENDGAME TRANSITION
+// ================================================================
+const dustCanvas = document.getElementById('dust-canvas');
+const dustCtx = dustCanvas.getContext('2d');
+
+function resizeDustCanvas() {
+  dustCanvas.width = window.innerWidth;
+  dustCanvas.height = window.innerHeight;
+}
+resizeDustCanvas();
+window.addEventListener('resize', resizeDustCanvas);
+
+async function dustTransition(fromId, toId) {
+  return new Promise(resolve => {
+    const fromEl = document.getElementById(fromId);
+    if (!fromEl || !fromEl.classList.contains('active')) {
+      resolve();
+      return;
+    }
+    // Capture screenshot-like dust effect using canvas
+    const w = window.innerWidth, h = window.innerHeight;
+    dustCtx.clearRect(0, 0, w, h);
+
+    const particles = [];
+    const count = 120;
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 6 + 2,
+        dx: (Math.random() - 0.3) * 8,
+        dy: (Math.random() - 0.8) * 6,
+        alpha: 1,
+        color: Math.random() > 0.5 ? `rgba(0,195,255,` : `rgba(179,71,255,`,
+        life: 0
+      });
+    }
+
+    // Also add orange/gold particles (Snap effect)
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 3 + 1,
+        dx: (Math.random() - 0.3) * 12,
+        dy: (Math.random() - 0.9) * 8,
+        alpha: 1,
+        color: `rgba(255,160,30,`,
+        life: 0
+      });
+    }
+
+    let frame = 0;
+    const maxFrames = 55;
+
+    function animate() {
+      dustCtx.clearRect(0, 0, w, h);
+      frame++;
+      let alive = false;
+      for (const p of particles) {
+        p.life++;
+        if (p.life < 5) { alive = true; continue; }
+        p.x += p.dx;
+        p.y += p.dy;
+        p.alpha -= 0.018;
+        p.dx *= 0.98;
+        if (p.alpha > 0) {
+          alive = true;
+          dustCtx.beginPath();
+          dustCtx.arc(p.x, p.y, p.r * p.alpha, 0, Math.PI * 2);
+          dustCtx.fillStyle = p.color + p.alpha + ')';
+          dustCtx.fill();
+        }
+      }
+      if (frame < maxFrames && alive) {
+        requestAnimationFrame(animate);
+      } else {
+        dustCtx.clearRect(0, 0, w, h);
+        resolve();
+      }
+    }
+
+    // Start dissolving the current screen
+    fromEl.style.transition = 'opacity 0.5s ease, filter 0.5s ease';
+    fromEl.style.opacity = '0';
+    fromEl.style.filter = 'blur(6px) brightness(1.5)';
+    setTimeout(() => {
+      fromEl.classList.remove('active');
+      fromEl.style.opacity = '';
+      fromEl.style.filter = '';
+      fromEl.style.transition = '';
+    }, 500);
+
+    setTimeout(animate, 100);
+  });
+}
+
+async function showScreen(targetId) {
+  const current = screens.find(s => document.getElementById(s)?.classList.contains('active'));
+  if (current && current !== targetId) {
+    previousScreen = current;
+  }
+  if (current === targetId) return;
+
+  await dustTransition(current, targetId);
+
+  const target = document.getElementById(targetId);
+  if (target) {
+    target.classList.add('active');
+    target.style.opacity = '0';
+    requestAnimationFrame(() => {
+      target.style.transition = 'opacity 0.4s ease';
+      target.style.opacity = '1';
+      setTimeout(() => { target.style.transition = ''; }, 400);
+    });
+  }
+  onScreenChange(targetId);
+}
+
+function goBack() {
+  showScreen(previousScreen || 'screen-dashboard');
+}
+
+function onScreenChange(screenId) {
+  if (screenId === 'screen-dashboard') {
+    loadDashboard();
+  } else if (screenId === 'screen-admin') {
+    loadAdminUsers();
+    loadAdminAnnouncement();
+    loadAdminBlockedUsers();
+  } else if (screenId === 'screen-link') {
+    loadLinkedChannels();
+  } else if (screenId === 'screen-settings') {
+    loadSettings();
+  }
+}
+
+// ================================================================
+// LOADER
+// ================================================================
+function showLoader(text = 'Loading...') {
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('loader-text').textContent = text;
+}
+function hideLoader() {
+  document.getElementById('loader').classList.remove('show');
+}
+
+// ================================================================
+// TOAST
+// ================================================================
+function showToast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ================================================================
+// FIREBASE AUTH
+// ================================================================
+document.addEventListener('firebaseReady', () => {
+  const { onAuthStateChanged } = window.__fbModules;
+  const auth = window.__auth;
+
+  onAuthStateChanged(auth, (user) => {
+    hideLoader();
+    if (user) {
+      currentUser = user;
+      isAdmin = user.email === window.ADMIN_EMAIL;
+      updateNavAvatar(user.email);
+      document.getElementById('navbar').style.display = 'flex';
+      document.getElementById('mobile-search').style.display = 'flex';
+      if (isAdmin) document.getElementById('nav-avatar').innerHTML = '★';
+      showScreen('screen-dashboard');
+      setTimeout(() => {
+        updateLastLogin(user.uid).catch(() => {});
+        loadAds().catch(() => {});
+        loadAnnouncement().catch(() => {});
+      }, 500);
+    } else {
+      currentUser = null;
+      isAdmin = false;
+      document.getElementById('navbar').style.display = 'none';
+      document.getElementById('mobile-search').style.display = 'none';
+      showScreen('screen-login');
+    }
+  });
+});
+
+function updateNavAvatar(email) {
+  const el = document.getElementById('nav-avatar');
+  el.textContent = email ? email[0].toUpperCase() : 'U';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.remove('show');
+  if (!email || !pass) { errEl.textContent = 'Please fill in all fields.'; errEl.classList.add('show'); return; }
+  showLoader('Signing in...');
+  try {
+    const { signInWithEmailAndPassword } = window.__fbModules;
+    await signInWithEmailAndPassword(window.__auth, email, pass);
+    showToast('Welcome back!', 'success');
+  } catch (e) {
+    hideLoader();
+    errEl.textContent = friendlyError(e.code);
+    errEl.classList.add('show');
+  }
+  hideLoader();
+}
+
+async function doSignup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const errEl = document.getElementById('signup-error');
+  errEl.classList.remove('show');
+  if (!email || !pass) { errEl.textContent = 'Please fill all fields.'; errEl.classList.add('show'); return; }
+  if (pass !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.classList.add('show'); return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.add('show'); return; }
+  showLoader('Creating account...');
+  try {
+    const { createUserWithEmailAndPassword, doc, setDoc, serverTimestamp } = window.__fbModules;
+    const cred = await createUserWithEmailAndPassword(window.__auth, email, pass);
+    await setDoc(doc(window.__db, 'users', cred.user.uid), {
+      uid: cred.user.uid,
+      email,
+      searchCount: 0,
+      dateCreated: serverTimestamp(),
+      lastLogin: serverTimestamp()
+    });
+    showToast('Account created! Welcome!', 'success');
+  } catch (e) {
+    hideLoader();
+    errEl.textContent = friendlyError(e.code);
+    errEl.classList.add('show');
+  }
+  hideLoader();
+}
+
+async function doSignOut() {
+  const { signOut } = window.__fbModules;
+  await signOut(window.__auth);
+  showToast('Signed out.', 'info');
+}
+
+async function updateLastLogin(uid) {
+  try {
+    const { doc, setDoc, serverTimestamp } = window.__fbModules;
+    await setDoc(doc(window.__db, 'users', uid), { lastLogin: serverTimestamp(), uid, email: window.__auth.currentUser?.email || '' }, { merge: true });
+  } catch(e) {}
+}
+
+function friendlyError(code) {
+  const map = {
+    'auth/invalid-email': 'Invalid email address.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Incorrect password.',
+    'auth/email-already-in-use': 'Email already in use.',
+    'auth/weak-password': 'Password too weak.',
+    'auth/too-many-requests': 'Too many attempts. Please wait.',
+    'auth/invalid-credential': 'Invalid credentials. Check email & password.',
+  };
+  return map[code] || 'An error occurred. Please try again.';
+}
+
+function switchToSignup() { showScreen('screen-signup'); }
+function switchToLogin() { showScreen('screen-login'); }
+
+// ================================================================
+// DASHBOARD
+// ================================================================
+async function loadDashboard() {
+  if (!currentUser) return;
+  document.getElementById('settings-email').textContent = currentUser.email;
+  document.getElementById('welcome-msg').textContent = `Welcome back, ${currentUser.email.split('@')[0]}${isAdmin ? ' 👑' : ''}`;
+
+  if (isAdmin) {
+    // Show admin button in nav
+    const existing = document.getElementById('admin-nav-btn');
+    if (!existing) {
+      const btn = document.createElement('button');
+      btn.className = 'nav-icon-btn';
+      btn.id = 'admin-nav-btn';
+      btn.innerHTML = '👑 ADMIN';
+      btn.style.color = '#ff8800';
+      btn.onclick = () => showScreen('screen-admin');
+      document.querySelector('.nav-actions').prepend(btn);
+    }
+  }
+
+  try {
+    const { doc, getDoc, collection, getDocs, query, orderBy, limit, where } = window.__fbModules;
+    const userDoc = await getDoc(doc(window.__db, 'users', currentUser.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      document.getElementById('stat-searches').textContent = data.searchCount || 0;
+      document.getElementById('stat-date').textContent = data.dateCreated?.toDate ? data.dateCreated.toDate().toLocaleDateString() : '—';
+      document.getElementById('stat-last').textContent = data.lastLogin?.toDate ? data.lastLogin.toDate().toLocaleDateString() : '—';
+    }
+
+    // Linked channels count
+    try {
+      const linkedSnap = await getDocs(collection(window.__db, 'users', currentUser.uid, 'linkedChannels'));
+      document.getElementById('stat-channels').textContent = linkedSnap.size;
+    } catch(e) {}
+
+    // Recent searches
+    try {
+      const q = query(
+        collection(window.__db, 'searches'),
+        where('userId', '==', currentUser.uid),
+        orderBy('timestamp', 'desc'),
+        limit(6)
+      );
+      const snap = await getDocs(q);
+      const list = document.getElementById('recent-searches-list');
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = `<div style="color:var(--text-muted);font-family:var(--font-ui);font-size:0.85rem;">No searches yet. Try searching a niche or channel!</div>`;
+      } else {
+        snap.forEach(d => {
+          const s = d.data();
+          const el = document.createElement('div');
+          el.className = 'linked-list-item';
+          el.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;flex:1;">
+              <span style="font-size:1.2rem;">${s.type === 'niche' ? '🔍' : '📺'}</span>
+              <div>
+                <div style="font-family:var(--font-ui);font-weight:700;color:var(--text-primary);">${escHtml(s.query)}</div>
+                <div style="font-family:var(--font-ui);font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">${s.type} · ${s.timestamp?.toDate ? s.timestamp.toDate().toLocaleDateString() : ''}</div>
+              </div>
+            </div>
+            <button class="btn-sm blue" onclick="${s.type === 'niche' ? `searchNicheDirect('${escAttr(s.query)}')` : `searchChannelDirect('${escAttr(s.query)}')`}">↗ VIEW</button>
+          `;
+          list.appendChild(el);
+        });
+      }
+    } catch(e) {}
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function escHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escAttr(str) {
+  return String(str).replace(/'/g, "\\'");
+}
+
+// ================================================================
+// YOUTUBE API
+// ================================================================
+const YT_BASE = 'https://www.googleapis.com/youtube/v3';
+
+async function ytFetch(endpoint, params) {
+  const url = new URL(YT_BASE + endpoint);
+  url.searchParams.set('key', window.YT_API_KEY);
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v);
+  }
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'YouTube API error');
+  }
+  return res.json();
+}
+
+function formatNumber(n) {
+  if (!n) return '—';
+  n = parseInt(n);
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toString();
+}
+
+function extractHashtags(texts) {
+  const freq = {};
+  const re = /#([a-zA-Z0-9_]+)/g;
+  for (const t of texts) {
+    let m;
+    while ((m = re.exec(t)) !== null) {
+      const tag = m[1].toLowerCase();
+      freq[tag] = (freq[tag] || 0) + 1;
+    }
+  }
+  return Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0, 20).map(e => e[0]);
+}
+
+function extractKeywords(texts, excludeCommon = true) {
+  const stopwords = new Set(['the','a','an','in','on','at','to','for','of','and','or','is','it','this','that','with','as','be','are','was','were','have','has','had','by','from','not','but','so','if','do','its','you','he','she','we','they','i','my','your','our','their','will','can','just','more','some','all','get','got','use','used','using','make','made','also','one','two','three','like','know','about','out','up','new','what','when','how','why','which','who','where','any','been','than','then','there','these','those','them','him','her','his','she','via','per','vs','now','very','much','many','most','too','only','other','after','before','since','until','while','such','each','both','own','into','over','through','under','between','against','without','within','along','during','above','below','should','would','could','may','might','shall','must','need','seem','become','take','give','show','tell','keep','leave','bring','look','live','feel','let','put','go','come','see','say','know']);
+  const freq = {};
+  for (const t of texts) {
+    const words = t.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/);
+    for (const w of words) {
+      if (w.length > 3 && (!excludeCommon || !stopwords.has(w))) {
+        freq[w] = (freq[w] || 0) + 1;
+      }
+    }
+  }
+  return Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0, 25).map(e => e[0]);
+}
+
+function renderTags(containerId, tags, type = 'purple') {
+  const el = document.getElementById(containerId);
+  el.innerHTML = tags.length ? tags.map(t => `<span class="tag ${type === 'blue' ? 'blue' : ''}">${escHtml('#' + t)}</span>`).join('') : '<span style="color:var(--text-muted);font-family:var(--font-ui);font-size:0.8rem;">None found</span>';
+}
+
+function renderKeywordTags(containerId, keywords) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = keywords.length ? keywords.map(k => `<span class="tag blue">${escHtml(k)}</span>`).join('') : '<span style="color:var(--text-muted);font-family:var(--font-ui);font-size:0.8rem;">None found</span>';
+}
+
+// ================================================================
+// NICHE SEARCH
+// ================================================================
+async function doNicheSearch(mobile = false, src = null) {
+  let query;
+  if (src === 'dash') query = document.getElementById('dash-niche-input').value.trim();
+  else if (mobile) query = document.getElementById('mob-niche-input').value.trim();
+  else query = document.getElementById('nav-niche-input').value.trim() || document.getElementById('dash-niche-input').value.trim();
+  if (!query) { showToast('Enter a niche to search.', 'warning'); return; }
+  await searchNicheDirect(query);
+}
+
+async function searchNicheDirect(query) {
+  if (!currentUser) return;
+  showLoader(`Analyzing niche: ${query}`);
+  try {
+    // search.list
+    const searchData = await ytFetch('/search', {
+      part: 'snippet',
+      q: query,
+      type: 'video',
+      maxResults: 24,
+      order: 'viewCount',
+      relevanceLanguage: 'en'
+    });
+
+    const videoIds = searchData.items.map(i => i.id.videoId).filter(Boolean).join(',');
+
+    // videos.list for stats
+    let videoStats = {};
+    if (videoIds) {
+      const statsData = await ytFetch('/videos', {
+        part: 'statistics,snippet',
+        id: videoIds
+      });
+      statsData.items.forEach(v => { videoStats[v.id] = v; });
+    }
+
+    const texts = searchData.items.map(i => (i.snippet.title + ' ' + (i.snippet.description || '') + ' ' + (i.snippet.tags || []).join(' ')));
+    const hashtags = extractHashtags(texts);
+    const keywords = extractKeywords(texts.map(t => t.replace(/#\w+/g, '')));
+
+    // Update UI
+    document.getElementById('niche-result-title').textContent = query.toUpperCase();
+    document.getElementById('niche-result-sub').textContent = `${searchData.items.length} videos analyzed`;
+    renderTags('niche-hashtags', hashtags, 'purple');
+    renderKeywordTags('niche-keywords', keywords);
+
+    const grid = document.getElementById('niche-videos');
+    grid.innerHTML = '';
+    for (const item of searchData.items) {
+      const vid = item.id.videoId;
+      const sn = item.snippet;
+      const stats = videoStats[vid]?.statistics || {};
+      const card = document.createElement('div');
+      card.className = 'video-card';
+      card.innerHTML = `
+        <img class="video-thumb" src="https://img.youtube.com/vi/${vid}/hqdefault.jpg" alt="${escHtml(sn.title)}" loading="lazy" onerror="this.parentElement.querySelector('.video-thumb-placeholder').style.display='flex';this.style.display='none'"/>
+        <div class="video-thumb-placeholder" style="display:none;">▶</div>
+        <div class="video-info">
+          <div class="channel-name">${escHtml(sn.channelTitle)}</div>
+          <div class="video-title">${escHtml(sn.title)}</div>
+          <div class="video-meta">
+            <span>👁 ${formatNumber(stats.viewCount)}</span>
+            <span>📅 ${sn.publishedAt ? new Date(sn.publishedAt).toLocaleDateString() : ''}</span>
+          </div>
+        </div>
+      `;
+      card.onclick = () => window.open(`https://youtube.com/watch?v=${vid}`, '_blank');
+      grid.appendChild(card);
+
+      // Insert ad between results every 8 cards
+      if (grid.children.length % 8 === 0) {
+        const adDiv = document.createElement('div');
+        adDiv.className = 'ad-slot';
+        adDiv.setAttribute('data-position','between-results');
+        grid.appendChild(adDiv);
+        injectAdsForSlot(adDiv, 'between-results');
+      }
+    }
+
+    // Save search
+    await saveSearch('niche', query);
+    await showScreen('screen-niche');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    console.error(e);
+  }
+  hideLoader();
+}
+
+// ================================================================
+// CHANNEL SEARCH
+// ================================================================
+async function doChannelSearch(mobile = false, src = null) {
+  let query;
+  if (src === 'dash') query = document.getElementById('dash-channel-input').value.trim();
+  else if (mobile) query = document.getElementById('mob-channel-input').value.trim();
+  else query = document.getElementById('nav-channel-input').value.trim() || document.getElementById('dash-channel-input').value.trim();
+  if (!query) { showToast('Enter a channel name.', 'warning'); return; }
+  await searchChannelDirect(query);
+}
+
+async function searchChannelDirect(query) {
+  if (!currentUser) return;
+  showLoader(`Finding channel: ${query}`);
+  try {
+    // Find channel
+    const searchData = await ytFetch('/search', {
+      part: 'snippet',
+      q: query,
+      type: 'channel',
+      maxResults: 1
+    });
+
+    if (!searchData.items?.length) { showToast('Channel not found.', 'error'); hideLoader(); return; }
+
+    const channelId = searchData.items[0].snippet.channelId || searchData.items[0].id.channelId;
+    await fetchAndDisplayChannel(channelId, query);
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    console.error(e);
+  }
+  hideLoader();
+}
+
+async function fetchAndDisplayChannel(channelId, searchQuery) {
+  // Channel details
+  const chData = await ytFetch('/channels', {
+    part: 'snippet,statistics,brandingSettings',
+    id: channelId
+  });
+  if (!chData.items?.length) { showToast('Channel data unavailable.', 'error'); return; }
+  const ch = chData.items[0];
+  const sn = ch.snippet;
+  const stats = ch.statistics;
+  const branding = ch.brandingSettings;
+
+  document.getElementById('channel-result-title').textContent = sn.title;
+  document.getElementById('channel-name-large').textContent = sn.title;
+  document.getElementById('channel-desc-short').textContent = sn.description?.slice(0, 120) + (sn.description?.length > 120 ? '...' : '') || '';
+  document.getElementById('ch-subs').textContent = formatNumber(stats.subscriberCount);
+  document.getElementById('ch-views').textContent = formatNumber(stats.viewCount);
+  document.getElementById('ch-videos').textContent = formatNumber(stats.videoCount);
+
+  const avatar = sn.thumbnails?.high?.url || sn.thumbnails?.default?.url || '';
+  document.getElementById('channel-avatar-img').src = avatar;
+  const banner = branding?.image?.bannerExternalUrl || '';
+  document.getElementById('channel-banner-img').src = banner;
+
+  // Fetch recent videos
+  const vidData = await ytFetch('/search', {
+    part: 'snippet',
+    channelId,
+    type: 'video',
+    maxResults: 24,
+    order: 'date'
+  });
+
+  const texts = vidData.items.map(i => (i.snippet.title + ' ' + (i.snippet.description || '')));
+  const allText = texts.join(' ');
+  renderTags('ch-hashtags', extractHashtags(texts), 'purple');
+  renderKeywordTags('ch-keywords', extractKeywords(texts));
+
+  // Topics from category-like keywords
+  const topics = extractKeywords(texts, false).filter(w => w.length > 5).slice(0, 12);
+  const topicsEl = document.getElementById('ch-topics');
+  topicsEl.innerHTML = topics.map(t => `<span class="tag">${escHtml(t)}</span>`).join('');
+
+  // Render videos
+  const grid = document.getElementById('ch-videos');
+  grid.innerHTML = '';
+  for (const item of vidData.items) {
+    const vid = item.id.videoId;
+    if (!vid) continue;
+    const vsn = item.snippet;
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = `
+      <img class="video-thumb" src="https://img.youtube.com/vi/${vid}/hqdefault.jpg" alt="${escHtml(vsn.title)}" loading="lazy"/>
+      <div class="video-info">
+        <div class="video-title">${escHtml(vsn.title)}</div>
+        <div class="video-meta"><span>📅 ${vsn.publishedAt ? new Date(vsn.publishedAt).toLocaleDateString() : ''}</span></div>
+      </div>
+    `;
+    card.onclick = () => window.open(`https://youtube.com/watch?v=${vid}`, '_blank');
+    grid.appendChild(card);
+  }
+
+  await saveSearch('channel', searchQuery || sn.title);
+  await showScreen('screen-channel');
+}
+
+// ================================================================
+// CHANNEL LINKER
+// ================================================================
+function extractChannelIdFromUrl(url) {
+  try {
+    const u = new URL(url);
+    // youtube.com/channel/UCxxxxxx
+    const chMatch = u.pathname.match(/\/channel\/(UC[\w-]+)/);
+    if (chMatch) return { type: 'id', value: chMatch[1] };
+    // youtube.com/c/name or @name
+    const handle = u.pathname.match(/\/@?([\w-]+)/);
+    if (handle) return { type: 'handle', value: handle[1] };
+    // youtube.com/watch?v=xxx
+    const v = u.searchParams.get('v');
+    if (v) return { type: 'video', value: v };
+  } catch(e) {}
+  return null;
+}
+
+async function analyzeLink() {
+  const url = document.getElementById('link-input').value.trim();
+  if (!url) { showToast('Paste a YouTube link.', 'warning'); return; }
+  showLoader('Analyzing link...');
+  try {
+    const parsed = extractChannelIdFromUrl(url);
+    let channelId;
+
+    if (parsed?.type === 'id') {
+      channelId = parsed.value;
+    } else if (parsed?.type === 'video') {
+      // Get channel from video
+      const vData = await ytFetch('/videos', { part: 'snippet', id: parsed.value });
+      channelId = vData.items?.[0]?.snippet?.channelId;
+    } else if (parsed?.type === 'handle') {
+      const sData = await ytFetch('/search', { part: 'snippet', q: parsed.value, type: 'channel', maxResults: 1 });
+      channelId = sData.items?.[0]?.id?.channelId;
+    }
+
+    if (!channelId) { showToast('Could not extract channel. Try a direct channel URL.', 'error'); hideLoader(); return; }
+
+    // Fetch channel videos
+    const vidData = await ytFetch('/search', {
+      part: 'snippet',
+      channelId,
+      type: 'video',
+      maxResults: 30,
+      order: 'date'
+    });
+
+    const items = vidData.items;
+    if (!items?.length) { showToast('No videos found.', 'error'); hideLoader(); return; }
+
+    const texts = items.map(i => i.snippet.title + ' ' + (i.snippet.description || ''));
+    renderTags('link-hashtags', extractHashtags(texts), 'purple');
+    renderKeywordTags('link-keywords', extractKeywords(texts));
+
+    // Categories
+    const cats = extractKeywords(texts, false).filter(w => w.length > 4).slice(0,8);
+    document.getElementById('link-categories').innerHTML = cats.map(c => `<span class="tag">${escHtml(c)}</span>`).join('');
+
+    // Upload frequency
+    const dates = items.map(i => new Date(i.snippet.publishedAt)).filter(d => !isNaN(d)).sort((a,b) => b-a);
+    let freqPerMonth = 0, growthText = '—', growthDesc = '';
+    if (dates.length > 1) {
+      const oldest = dates[dates.length - 1];
+      const newest = dates[0];
+      const monthsDiff = (newest - oldest) / (1000 * 60 * 60 * 24 * 30);
+      freqPerMonth = monthsDiff > 0 ? (dates.length / monthsDiff).toFixed(1) : dates.length;
+
+      // Growth pattern
+      const recent = dates.slice(0, Math.floor(dates.length / 2));
+      const older = dates.slice(Math.floor(dates.length / 2));
+      const recentGap = recent.length > 1 ? (recent[0] - recent[recent.length-1]) / (recent.length - 1) : 0;
+      const olderGap = older.length > 1 ? (older[0] - older[older.length-1]) / (older.length - 1) : 0;
+      if (recentGap < olderGap * 0.8) { growthText = '📈 INCREASING'; growthDesc = 'Uploading more frequently recently'; }
+      else if (recentGap > olderGap * 1.2) { growthText = '📉 SLOWING'; growthDesc = 'Upload pace has decreased recently'; }
+      else { growthText = '➡ STEADY'; growthDesc = 'Consistent upload schedule maintained'; }
+    }
+
+    document.getElementById('link-freq-value').textContent = freqPerMonth + ' / mo';
+    const barPct = Math.min(100, parseFloat(freqPerMonth) * 5);
+    document.getElementById('link-freq-bar').style.width = barPct + '%';
+    document.getElementById('link-growth').textContent = growthText;
+    document.getElementById('link-growth-desc').textContent = growthDesc;
+    document.getElementById('link-results').style.display = 'block';
+
+    // Save to Firestore
+    const { doc, setDoc, serverTimestamp } = window.__fbModules;
+    const chData = await ytFetch('/channels', { part: 'snippet,statistics', id: channelId });
+    const chTitle = chData.items?.[0]?.snippet?.title || channelId;
+    await setDoc(doc(window.__db, 'users', currentUser.uid, 'linkedChannels', channelId), {
+      channelId,
+      title: chTitle,
+      addedAt: serverTimestamp(),
+      freqPerMonth: parseFloat(freqPerMonth)
+    });
+
+    await loadLinkedChannels();
+    showToast('Channel analyzed & saved!', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    console.error(e);
+  }
+  hideLoader();
+}
+
+async function loadLinkedChannels() {
+  if (!currentUser) return;
+  try {
+    const { collection, getDocs } = window.__fbModules;
+    const snap = await getDocs(collection(window.__db, 'users', currentUser.uid, 'linkedChannels'));
+    const list = document.getElementById('linked-channels-list');
+    list.innerHTML = '';
+    if (snap.empty) {
+      list.innerHTML = `<div style="color:var(--text-muted);font-family:var(--font-ui);font-size:0.85rem;">No linked channels yet. Paste a link above!</div>`;
+      return;
+    }
+    snap.forEach(d => {
+      const data = d.data();
+      const el = document.createElement('div');
+      el.className = 'linked-list-item';
+      el.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-family:var(--font-ui);font-weight:700;color:var(--text-primary);">${escHtml(data.title || data.channelId)}</div>
+          <div style="font-family:var(--font-ui);font-size:0.72rem;color:var(--text-muted);">${data.freqPerMonth || 0} uploads/mo · Added ${data.addedAt?.toDate ? data.addedAt.toDate().toLocaleDateString() : ''}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm blue" onclick="fetchAndDisplayChannel('${escAttr(data.channelId)}','${escAttr(data.title || data.channelId)}')">📊 ANALYZE</button>
+          <button class="btn-sm" onclick="removeLinkedChannel('${escAttr(data.channelId)}')">🗑 REMOVE</button>
+        </div>
+      `;
+      list.appendChild(el);
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function removeLinkedChannel(channelId) {
+  try {
+    const { doc, deleteDoc } = window.__fbModules;
+    await deleteDoc(doc(window.__db, 'users', currentUser.uid, 'linkedChannels', channelId));
+    await loadLinkedChannels();
+    showToast('Channel removed.', 'info');
+  } catch(e) { showToast('Error removing channel.', 'error'); }
+}
+
+// ================================================================
+// SAVE SEARCH TO FIRESTORE
+// ================================================================
+async function saveSearch(type, query) {
+  if (!currentUser) return;
+  try {
+    const { collection, addDoc, doc, updateDoc, serverTimestamp } = window.__fbModules;
+    await addDoc(collection(window.__db, 'searches'), {
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      type,
+      query,
+      timestamp: serverTimestamp()
+    });
+    // Increment count
+    const userRef = doc(window.__db, 'users', currentUser.uid);
+    const snap = await (window.__fbModules.getDoc)(userRef);
+    if (snap.exists()) {
+      await updateDoc(userRef, { searchCount: (snap.data().searchCount || 0) + 1 });
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ================================================================
+// ADS SYSTEM
+// ================================================================
+let adsCache = [];
+
+async function loadAds() {
+  try {
+    const { collection, getDocs } = window.__fbModules;
+    const snap = await getDocs(collection(window.__db, 'ads'));
+    adsCache = [];
+    snap.forEach(d => adsCache.push(d.data()));
+    injectAllAds();
+  } catch(e) {}
+}
+
+function injectAllAds() {
+  const slots = document.querySelectorAll('.ad-slot');
+  slots.forEach(slot => {
+    const pos = slot.getAttribute('data-position');
+    injectAdsForSlot(slot, pos);
+  });
+}
+
+function injectAdsForSlot(slot, pos) {
+  const matching = adsCache.filter(a => a.position === pos);
+  if (matching.length) {
+    slot.innerHTML = matching.map(a => a.htmlCode).join('');
+    slot.style.display = 'block';
+    // Header special case
+    if (pos === 'header') {
+      document.getElementById('ad-header').style.display = 'block';
+    }
+  }
+}
+
+// ================================================================
+// ANNOUNCEMENT
+// ================================================================
+async function loadAnnouncement() {
+  try {
+    const { doc, getDoc } = window.__fbModules;
+    const snap = await getDoc(doc(window.__db, 'adminSettings', 'announcements'));
+    const bar = document.getElementById('announcement-bar');
+    if (snap.exists() && snap.data().text) {
+      bar.textContent = '📢 ' + snap.data().text;
+      bar.classList.add('show');
+    }
+  } catch(e) {}
+}
+
+// ================================================================
+// SETTINGS
+// ================================================================
+function applyBlur(val) {
+  document.documentElement.style.setProperty('--glass-intensity', val + 'px');
+}
+
+function setAccent(color1, color2) {
+  document.documentElement.style.setProperty('--neon-blue', color1);
+  document.documentElement.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color2}, ${color1})`);
+  document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+  event?.target?.classList.add('selected');
+}
+
+function setFontSize(size) {
+  document.documentElement.style.setProperty('--font-size-base', size);
+}
+
+async function saveSettings() {
+  if (!currentUser) return;
+  showLoader('Saving settings...');
+  try {
+    const { doc, setDoc } = window.__fbModules;
+    const blurVal = document.getElementById('set-blur').value;
+    const fontSize = document.getElementById('set-fontsize').value;
+    await setDoc(doc(window.__db, 'users', currentUser.uid, 'settings', 'preferences'), {
+      blur: blurVal,
+      fontSize
+    });
+    showToast('Settings saved!', 'success');
+  } catch(e) { showToast('Error saving settings.', 'error'); }
+  hideLoader();
+}
+
+async function loadSettings() {
+  if (!currentUser) return;
+  try {
+    const { doc, getDoc } = window.__fbModules;
+    const snap = await getDoc(doc(window.__db, 'users', currentUser.uid, 'settings', 'preferences'));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.blur) { document.getElementById('set-blur').value = d.blur; applyBlur(d.blur); }
+      if (d.fontSize) { document.getElementById('set-fontsize').value = d.fontSize; setFontSize(d.fontSize); }
+      if (d.darkMode !== undefined) {
+        if (d.darkMode) document.body.classList.add('dark-mode');
+        else document.body.classList.remove('dark-mode');
+      }
+    }
+    document.getElementById('settings-email').textContent = currentUser.email;
+  } catch(e) {}
+}
+
+// ================================================================
+// ADMIN PANEL
+// ================================================================
+function showAdminSection(id) {
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
+  event?.target?.classList.add('active');
+
+  // Load data when switching
+  if (id === 'admin-searches') loadAdminSearches();
+  if (id === 'admin-ads') loadAdminAds();
+  if (id === 'admin-announce') loadAdminAnnouncement();
+  if (id === 'admin-blocked') loadAdminBlockedUsers();
+}
+
+async function loadAdminUsers() {
+  try {
+    const { collection, getDocs } = window.__fbModules;
+    const snap = await getDocs(collection(window.__db, 'users'));
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    snap.forEach(d => {
+      const data = d.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--neon-blue)">${escHtml(data.email || '—')}</td>
+        <td>${data.searchCount || 0}</td>
+        <td>${data.dateCreated?.toDate ? data.dateCreated.toDate().toLocaleDateString() : '—'}</td>
+        <td>${data.lastLogin?.toDate ? data.lastLogin.toDate().toLocaleDateString() : '—'}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-sm" onclick="blockUser('${escAttr(data.uid)}','${escAttr(data.email)}')">🚫 BLOCK</button>
+            <button class="btn-sm" onclick="resetSearchCount('${escAttr(data.uid)}')">↺ RESET</button>
+            <button class="btn-sm" onclick="deleteUserHistory('${escAttr(data.uid)}')">🗑 HISTORY</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { showToast('Error loading users: ' + e.message, 'error'); }
+}
+
+async function loadAdminSearches() {
+  try {
+    const { collection, getDocs, query, orderBy, limit } = window.__fbModules;
+    const q = query(collection(window.__db, 'searches'), orderBy('timestamp', 'desc'), limit(50));
+    const snap = await getDocs(q);
+    const tbody = document.getElementById('searches-tbody');
+    tbody.innerHTML = '';
+    snap.forEach(d => {
+      const data = d.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--text-muted);font-size:0.78rem;">${escHtml(data.userEmail || data.userId?.slice(0,8) || '—')}</td>
+        <td><span class="badge">${data.type || '—'}</span></td>
+        <td>${escHtml(data.query || '—')}</td>
+        <td>${data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function loadAdminAds() {
+  try {
+    const { collection, getDocs } = window.__fbModules;
+    const snap = await getDocs(collection(window.__db, 'ads'));
+    const list = document.getElementById('ads-list');
+    list.innerHTML = '';
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);font-family:var(--font-ui);">No ads yet.</div>'; return; }
+    snap.forEach(d => {
+      const data = d.data();
+      const el = document.createElement('div');
+      el.className = 'linked-list-item';
+      el.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-family:var(--font-ui);font-weight:700;color:var(--neon-blue);text-transform:uppercase;font-size:0.8rem;">${escHtml(data.position)}</div>
+          <div style="font-family:var(--font-body);font-size:0.75rem;color:var(--text-muted);margin-top:4px;word-break:break-all;">${escHtml(data.htmlCode?.slice(0,80))}...</div>
+        </div>
+        <button class="btn-sm" onclick="removeAd('${escAttr(d.id)}')">🗑 REMOVE</button>
+      `;
+      list.appendChild(el);
+    });
+  } catch(e) {}
+}
+
+async function saveAd() {
+  const position = document.getElementById('ad-position').value;
+  const htmlCode = document.getElementById('ad-html').value.trim();
+  if (!htmlCode) { showToast('Enter ad HTML.', 'warning'); return; }
+  try {
+    const { collection, addDoc, serverTimestamp } = window.__fbModules;
+    await addDoc(collection(window.__db, 'ads'), { position, htmlCode, createdAt: serverTimestamp() });
+    document.getElementById('ad-html').value = '';
+    showToast('Ad saved!', 'success');
+    await loadAdminAds();
+    await loadAds();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function removeAd(adId) {
+  try {
+    const { doc, deleteDoc } = window.__fbModules;
+    await deleteDoc(doc(window.__db, 'ads', adId));
+    showToast('Ad removed.', 'info');
+    await loadAdminAds();
+    await loadAds();
+  } catch(e) {}
+}
+
+async function loadAdminAnnouncement() {
+  try {
+    const { doc, getDoc } = window.__fbModules;
+    const snap = await getDoc(doc(window.__db, 'adminSettings', 'announcements'));
+    const cur = document.getElementById('current-announcement');
+    const ta = document.getElementById('announce-text');
+    if (snap.exists() && snap.data().text) {
+      cur.textContent = snap.data().text;
+      ta.value = snap.data().text;
+    } else { cur.textContent = 'No active announcement.'; }
+  } catch(e) {}
+}
+
+async function saveAnnouncement() {
+  const text = document.getElementById('announce-text').value.trim();
+  if (!text) { showToast('Enter announcement text.', 'warning'); return; }
+  try {
+    const { doc, setDoc, serverTimestamp } = window.__fbModules;
+    await setDoc(doc(window.__db, 'adminSettings', 'announcements'), { text, updatedAt: serverTimestamp() });
+    showToast('Announcement published!', 'success');
+    await loadAdminAnnouncement();
+    await loadAnnouncement();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function clearAnnouncement() {
+  try {
+    const { doc, setDoc } = window.__fbModules;
+    await setDoc(doc(window.__db, 'adminSettings', 'announcements'), { text: '' });
+    document.getElementById('announcement-bar').classList.remove('show');
+    showToast('Announcement cleared.', 'info');
+    await loadAdminAnnouncement();
+  } catch(e) {}
+}
+
+async function blockUser(uid, email) {
+  if (!uid) return;
+  try {
+    const { doc, setDoc, serverTimestamp } = window.__fbModules;
+    await setDoc(doc(window.__db, 'adminSettings', 'blockedUsers', uid), { uid, email, blockedAt: serverTimestamp() });
+    showToast(`User ${email} blocked.`, 'warning');
+    await loadAdminUsers();
+    await loadAdminBlockedUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function loadAdminBlockedUsers() {
+  try {
+    const { collection, getDocs } = window.__fbModules;
+    const snap = await getDocs(collection(window.__db, 'adminSettings', 'blockedUsers'));
+    const list = document.getElementById('blocked-users-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (snap.empty) { list.innerHTML = '<div style="color:var(--text-muted);font-family:var(--font-ui);">No blocked users.</div>'; return; }
+    snap.forEach(d => {
+      const data = d.data();
+      const el = document.createElement('div');
+      el.className = 'linked-list-item';
+      el.innerHTML = `
+        <div style="flex:1;font-family:var(--font-ui);color:var(--text-secondary);">${escHtml(data.email || data.uid)}</div>
+        <button class="btn-sm blue" onclick="unblockUser('${escAttr(data.uid)}')">✓ UNBLOCK</button>
+      `;
+      list.appendChild(el);
+    });
+  } catch(e) {}
+}
+
+async function unblockUser(uid) {
+  try {
+    const { doc, deleteDoc } = window.__fbModules;
+    await deleteDoc(doc(window.__db, 'adminSettings', 'blockedUsers', uid));
+    showToast('User unblocked.', 'success');
+    await loadAdminBlockedUsers();
+  } catch(e) {}
+}
+
+async function resetSearchCount(uid) {
+  try {
+    const { doc, updateDoc } = window.__fbModules;
+    await updateDoc(doc(window.__db, 'users', uid), { searchCount: 0 });
+    showToast('Search count reset.', 'info');
+    await loadAdminUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteUserHistory(uid) {
+  try {
+    const { collection, getDocs, doc, deleteDoc, query, where } = window.__fbModules;
+    const q = query(collection(window.__db, 'searches'), where('userId', '==', uid));
+    const snap = await getDocs(q);
+    const promises = [];
+    snap.forEach(d => promises.push(deleteDoc(doc(window.__db, 'searches', d.id))));
+    await Promise.all(promises);
+    showToast('User search history deleted.', 'info');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function saveThemeSettings() {
+  const neonBlue = document.getElementById('admin-neon-blue').value;
+  const neonPurple = document.getElementById('admin-neon-purple').value;
+  document.documentElement.style.setProperty('--neon-blue', neonBlue);
+  document.documentElement.style.setProperty('--neon-purple', neonPurple);
+  try {
+    const { doc, setDoc } = window.__fbModules;
+    await setDoc(doc(window.__db, 'adminSettings', 'appTheme'), { neonBlue, neonPurple });
+    showToast('Theme applied globally!', 'success');
+  } catch(e) {}
+}
+
+// Load admin theme on app start
+async function loadAppTheme() {
+  try {
+    const { doc, getDoc } = window.__fbModules;
+    const snap = await getDoc(doc(window.__db, 'adminSettings', 'appTheme'));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.neonBlue) document.documentElement.style.setProperty('--neon-blue', d.neonBlue);
+      if (d.neonPurple) document.documentElement.style.setProperty('--neon-purple', d.neonPurple);
+    }
+  } catch(e) {}
+}
+
+document.addEventListener('firebaseReady', () => {
+  loadAppTheme();
+});
+
+
+// ================================================================
+// DARK MODE
+// ================================================================
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  // Save to Firestore if logged in
+  if (currentUser) {
+    try {
+      const { doc, setDoc } = window.__fbModules;
+      setDoc(doc(window.__db, 'users', currentUser.uid, 'settings', 'preferences'),
+        { darkMode: isDark }, { merge: true }).catch(() => {});
+    } catch(e) {}
+  }
+}
+
+function loadDarkModePreference() {
+  const saved = localStorage.getItem('darkMode');
+  if (saved === '1') document.body.classList.add('dark-mode');
+}
+
+// Load on startup
+loadDarkModePreference();
+
+// ================================================================
+// KEYBOARD SHORTCUTS
+// ================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const active = document.querySelector('.screen.active');
+    if (!active) return;
+    if (active.id === 'screen-login') doLogin();
+    else if (active.id === 'screen-signup') doSignup();
+  }
+  if (e.key === 'Escape') {
+    const cur = document.querySelector('.screen.active')?.id;
+    if (cur && cur !== 'screen-dashboard' && cur !== 'screen-login' && cur !== 'screen-signup') {
+      showScreen('screen-dashboard');
+    }
+  }
+});
+
+// ================================================================
+// USER MENU (simple)
+// ================================================================
+function showUserMenu() {
+  showScreen(isAdmin ? 'screen-admin' : 'screen-settings');
+}
+
+// ================================================================
+// PARTICLE BACKGROUND EFFECT
+// ================================================================
+(function() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.4;';
+  document.body.prepend(canvas);
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.5 + 0.3,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.6 + 0.2,
+      color: Math.random() > 0.5 ? '0,195,255' : '179,71,255'
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script> 
+ </body>
+</html>
