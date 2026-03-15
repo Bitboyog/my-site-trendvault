@@ -2,8 +2,41 @@
 <html lang="en"> 
  <head> 
   <meta charset="UTF-8"> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-  <title>Trendify</title> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+  <title>Trendify - YouTube Trend Intelligence</title>
+  <meta name="description" content="Trendify is a YouTube trend analysis tool. Search niches, analyze channels, discover trending content and get AI-powered growth suggestions."/>
+  <meta name="keywords" content="YouTube trends, channel analysis, niche research, content strategy, YouTube growth, trending topics"/>
+  <meta name="robots" content="index, follow"/>
+  <meta property="og:title" content="Trendify - YouTube Trend Intelligence"/>
+  <meta property="og:description" content="Analyze YouTube niches, channels and trending content. Get AI growth suggestions for your channel."/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="Trendify - YouTube Trend Intelligence"/>
+  <meta name="twitter:description" content="Analyze YouTube niches and channels. Get AI-powered growth suggestions."/>
+  <!-- Structured data for AI crawlers — describes what this site does publicly -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Trendify",
+    "description": "Trendify is a YouTube trend analysis platform. Users can search YouTube niches to find trending hashtags, keywords and videos. They can analyze any YouTube channel to get AI-powered growth suggestions covering consistency, engagement, branding and SEO. Channel linking allows tracking upload frequency and growth patterns.",
+    "applicationCategory": "Analytics",
+    "operatingSystem": "Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "featureList": [
+      "YouTube niche trend analysis",
+      "Channel performance analysis",
+      "AI-powered channel growth suggestions",
+      "Hashtag and keyword extraction",
+      "Upload frequency tracking",
+      "Channel health scoring"
+    ],
+    "creator": { "@type": "Organization", "name": "Trendify" }
+  }
+  </script>
+  <!-- Public sitemap info for crawlers -->
+  <meta name="application-name" content="Trendify"/>
+  <meta name="category" content="YouTube Analytics, Content Strategy, Channel Growth"/> 
   <link rel="preconnect" href="https://fonts.googleapis.com"> 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500&amp;display=swap" rel="stylesheet"> <!-- Firebase SDKs --> 
   <script type="module">
@@ -155,7 +188,7 @@ body {
   overflow-x: hidden;
   background: var(--bg);
   width: 100%;
-  max-width: 100vw;
+  box-sizing: border-box;
 }
 .screen.active { display: flex; flex-direction: column; }
 
@@ -164,8 +197,11 @@ body {
   justify-content: center;
   padding: 20px;
   z-index: 150;
+  min-height: 100vh;
 }
-.screen-app { padding-top: 70px; }
+.screen-app {
+  padding-top: 64px;
+}
 
 /* ── DUST ANIMATION ── */
 .dust-container { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
@@ -189,10 +225,13 @@ body {
   z-index: 100;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 14px;
+  padding: 0 14px;
+  gap: 10px;
   background: var(--bg);
   box-shadow: 0 4px 12px #c3cad6, 0 -2px 6px #ffffff;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 body.dark-mode #navbar {
   box-shadow: 0 4px 12px #000000, 0 -2px 6px #1a1a1a;
@@ -297,7 +336,7 @@ body.dark-mode #navbar {
 }
 body.dark-mode .mobile-search { box-shadow: 0 4px 10px #161c28; }
 @media (max-width: 768px) {
-  .screen-app { padding-top: 128px; }
+  .screen-app { padding-top: 150px; }
   .mobile-search { display: flex; }
   .mobile-search .nav-search-group { display: flex; }
 }
@@ -429,8 +468,9 @@ body.dark-mode .form-input:focus { box-shadow: inset 5px 5px 12px #131922, inset
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 12px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 @media (min-width: 700px) {
   .stats-grid { grid-template-columns: repeat(4, 1fr); }
@@ -439,11 +479,13 @@ body.dark-mode .form-input:focus { box-shadow: inset 5px 5px 12px #131922, inset
 .stat-card {
   background: var(--bg);
   border-radius: var(--radius-lg);
-  padding: 22px 18px;
+  padding: 16px 14px;
   box-shadow: var(--neu-out);
   position: relative;
   overflow: hidden;
   transition: var(--transition);
+  min-width: 0;
+  word-break: break-word;
 }
 .stat-card::before {
   content: '';
@@ -457,14 +499,17 @@ body.dark-mode .form-input:focus { box-shadow: inset 5px 5px 12px #131922, inset
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: clamp(1.1rem, 4vw, 1.8rem);
   font-weight: 900;
   background: var(--accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .stat-label {
   font-family: var(--font-ui);
@@ -724,13 +769,21 @@ body.dark-mode .score-bars-section { box-shadow: 0 2px 0 #161c28; }
 body.dark-mode .sug-item { border-top-color: rgba(255,255,255,0.04); }
 .sug-item:hover { background: rgba(79,142,247,0.04); }
 .sug-icon-wrap {
-  width: 38px; height: 38px;
+  width: 36px; height: 36px;
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 900;
+  font-family: var(--font-display);
+  color: var(--blue);
   flex-shrink: 0;
   box-shadow: var(--neu-in-sm);
+  background: var(--bg);
 }
+.sug-icon-wrap.red { color: #e05555; }
+.sug-icon-wrap.orange { color: #d97706; }
+.sug-icon-wrap.green { color: #059669; }
+.sug-icon-wrap.blue { color: var(--blue); }
 .sug-title { font-family: var(--font-ui); font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
 .sug-desc  { font-family: var(--font-body); font-size: 0.8rem; color: var(--text2); line-height: 1.55; }
 .sug-priority {
@@ -767,6 +820,12 @@ body.dark-mode .sug-item { border-top-color: rgba(255,255,255,0.04); }
   overflow-y: auto;
 }
 body.dark-mode .admin-sidebar { box-shadow: 4px 0 10px #000000; background: var(--bg); }
+body.dark-mode .glass-card { background: var(--bg); }
+body.dark-mode .stat-card { background: var(--bg); }
+body.dark-mode .settings-card { background: var(--bg); }
+body.dark-mode .video-card { background: var(--bg); }
+body.dark-mode .linked-list-item { background: var(--bg); }
+body.dark-mode .suggestions-panel { background: var(--bg); }
 .admin-nav-item {
   display: flex;
   align-items: center;
@@ -1121,7 +1180,7 @@ body.dark-mode .dark-mode-toggle::after { content: '🌙'; left: 28px; }
 .flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; }
 .gap-10 { gap: 10px; } .gap-16 { gap: 16px; } .mb-16 { margin-bottom: 16px; } .mb-24 { margin-bottom: 24px; }
 .mt-8 { margin-top: 8px; } .hidden { display: none !important; } .w-full { width: 100%; }
-.content-wrapper { max-width: 1400px; margin: 0 auto; padding: 20px 16px 24px; position: relative; z-index: 1; overflow-x: hidden; }
+.content-wrapper { max-width: 1400px; margin: 0 auto; padding: 16px 14px 90px; position: relative; z-index: 1; overflow-x: hidden; width: 100%; box-sizing: border-box; }
 .page-header { margin-bottom: 28px; padding-bottom: 20px; }
 .page-title {
   font-family: var(--font-display);
@@ -1148,7 +1207,8 @@ body.dark-mode .dark-mode-toggle::after { content: '🌙'; left: 28px; }
 body.dark-mode #mobile-bottom-nav { box-shadow: 0 -4px 12px #000000; background: var(--bg); }
 @media (max-width: 768px) {
   #mobile-bottom-nav { display: flex; }
-  .screen-app { padding-bottom: 70px; }
+  .screen-app { padding-bottom: 80px; }
+  .content-wrapper { padding-bottom: 90px; }
 }
 .mob-nav-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1178,21 +1238,26 @@ body.dark-mode #mobile-bottom-nav { box-shadow: 0 -4px 12px #000000; background:
   .two-col { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
-  .content-wrapper { padding: 12px 10px 80px; }
-  .page-title { font-size: 1.1rem; }
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat-value { font-size: 1.4rem; }
-  .stat-card { padding: 14px 12px; }
-  .glass-card { padding: 14px; }
-  .auth-box { padding: 28px 20px; }
+  .content-wrapper { padding: 14px 12px 90px; width: 100%; }
+  .page-title { font-size: 1rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+  .stat-card { padding: 12px 10px; min-width: 0; }
+  .glass-card { padding: 12px; }
+  .auth-box { padding: 28px 18px; }
   .auth-logo { font-size: 1.4rem; }
   .btn-primary { padding: 13px; font-size: 0.8rem; }
-  .form-input { padding: 11px 14px; font-size: 0.88rem; }
+  .form-input { padding: 11px 12px; font-size: 0.88rem; }
   .results-grid { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
-  .nav-logo { font-size: 0.9rem; letter-spacing: 1px; }
-  .data-table { font-size: 0.75rem; }
-  .data-table th, .data-table td { padding: 7px 8px; }
+  .nav-logo { font-size: 0.9rem; letter-spacing: 0px; }
+  .data-table { font-size: 0.72rem; }
+  .data-table th, .data-table td { padding: 6px 7px; }
+  .section-title { font-size: 0.68rem; letter-spacing: 2px; }
+  .channel-title-large { font-size: 1.1rem; }
+  .two-col { grid-template-columns: 1fr; gap: 12px; }
+  .score-lbl { width: 90px; font-size: 0.72rem; }
+  .sug-item { padding: 12px 14px; gap: 10px; }
+  .sug-desc { font-size: 0.76rem; }
 }
 
 .nav-signout { color: #e05555 !important; }
@@ -1205,7 +1270,15 @@ body.dark-mode #mobile-bottom-nav { box-shadow: 0 -4px 12px #000000; background:
 ::-webkit-scrollbar-thumb:hover { background: var(--blue); }
 </style> 
  </head> 
- <body> <!-- ============================================================
+ <body>
+<!-- ================================================================
+  TRENDIFY — PUBLIC INFORMATION FOR AI CRAWLERS & SEARCH ENGINES
+  This site is a YouTube trend analysis web app.
+  Features: niche search, channel analysis, growth suggestions.
+  No API keys, credentials, or private data are included in this section.
+================================================================ -->
+
+<!-- ============================================================
      DUST ANIMATION CANVAS
 ============================================================ --> 
   <canvas id="dust-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9998;"></canvas> <!-- ============================================================
@@ -2361,6 +2434,24 @@ async function fetchAndDisplayChannel(channelId, searchQuery) {
     order: 'date'
   });
 
+  // Detect Shorts: fetch video durations, Shorts are <= 60 seconds
+  let shortsCount = 0;
+  try {
+    const vidIds = vidData.items.map(i => i.id.videoId).filter(Boolean).join(',');
+    if (vidIds) {
+      const durationData = await ytFetch('/videos', { part: 'contentDetails', id: vidIds });
+      durationData.items.forEach(v => {
+        const dur = v.contentDetails?.duration || '';
+        // ISO 8601 duration: PT1M = 60s, PT59S = 59s, PTxxS where xx<=60
+        const match = dur.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+        const mins = parseInt(match?.[1] || '0');
+        const secs = parseInt(match?.[2] || '0');
+        const totalSecs = mins * 60 + secs;
+        if (totalSecs > 0 && totalSecs <= 61) shortsCount++;
+      });
+    }
+  } catch(e) { /* duration fetch failed, fall back to text detection */ }
+
   const texts = vidData.items.map(i => (i.snippet.title + ' ' + (i.snippet.description || '')));
   const allText = texts.join(' ');
   renderTags('ch-hashtags', extractHashtags(texts), 'purple');
@@ -2392,7 +2483,7 @@ async function fetchAndDisplayChannel(channelId, searchQuery) {
   }
 
   // Generate growth suggestions
-  generateChannelSuggestions(ch, vidData.items, texts);
+  generateChannelSuggestions(ch, vidData.items, texts, shortsCount);
 
   await saveSearch('channel', searchQuery || sn.title);
   await showScreen('screen-channel');
@@ -2402,7 +2493,7 @@ async function fetchAndDisplayChannel(channelId, searchQuery) {
 // ================================================================
 // CHANNEL GROWTH SUGGESTIONS (AI Analysis)
 // ================================================================
-function generateChannelSuggestions(ch, videos, texts) {
+function generateChannelSuggestions(ch, videos, texts, shortsCount) {
   const panel = document.getElementById('ch-suggestions');
   panel.style.display = 'block';
 
@@ -2422,7 +2513,10 @@ function generateChannelSuggestions(ch, videos, texts) {
   const hasNumbers = titles.filter(t => /\d/.test(t)).length;
   const hasQuestions = titles.filter(t => /\?/.test(t)).length;
   const hasEmojis = titles.filter(t => /[\u{1F300}-\u{1FFFF}]/u.test(t)).length;
-  const hasShorts = texts.some(t => t.toLowerCase().includes('short'));
+  // Shorts detection: use duration data (shortsCount) + text signals
+  const shortsInTitles = texts.filter(t => /#shorts|#short\b|youtube shorts/i.test(t)).length;
+  const hasShorts = (shortsCount !== undefined ? shortsCount > 0 : false) || shortsInTitles >= 2;
+  const shortsPercent = Math.round(((shortsCount || shortsInTitles) / Math.max(videos.length, 1)) * 100);
 
   const consistencyScore = Math.min(100, vidCount > 50 ? 90 : vidCount > 20 ? 70 : vidCount > 5 ? 45 : 20);
   const engagementScore = Math.min(100, parseFloat(viewsPerSub) > 10 ? 90 : parseFloat(viewsPerSub) > 5 ? 70 : parseFloat(viewsPerSub) > 2 ? 50 : 30);
@@ -2444,23 +2538,27 @@ function generateChannelSuggestions(ch, videos, texts) {
   ).join('');
 
   const suggestions = [];
-  if (vidCount < 10) suggestions.push({ icon: '\u{1F4C5}', c: 'red', p: 'high', title: 'Upload More Content', desc: 'Only ' + vidCount + ' videos. Channels with 50+ videos rank far better. Aim for 2-3 uploads per week to build momentum and feed the algorithm.' });
-  else if (vidCount < 30) suggestions.push({ icon: '\u{1F4C5}', c: 'orange', p: 'medium', title: 'Increase Upload Frequency', desc: vidCount + ' videos is a start. Push toward 50+ videos where YouTube recommendation kicks in.' });
+  if (vidCount < 10) suggestions.push({ icon: '+', c: 'red', p: 'high', title: 'Upload More Content', desc: 'Only ' + vidCount + ' videos. Channels with 50+ videos rank far better. Aim for 2-3 uploads per week to build momentum and feed the algorithm.' });
+  else if (vidCount < 30) suggestions.push({ icon: '+', c: 'orange', p: 'medium', title: 'Increase Upload Frequency', desc: vidCount + ' videos is a start. Push toward 50+ videos where YouTube recommendation kicks in.' });
 
-  if (!hasDesc) suggestions.push({ icon: '\u{1F4DD}', c: 'red', p: 'high', title: 'Write a Channel Description', desc: 'No description found. A keyword-rich description helps YouTube categorize your content and improves search discoverability.' });
-  if (!hasBanner) suggestions.push({ icon: '\u{1F3A8}', c: 'orange', p: 'medium', title: 'Add a Channel Banner', desc: 'Missing channel banner. A professional banner boosts trust and subscriber conversion by up to 30%.' });
-  if (avgTitleLen < 30) suggestions.push({ icon: '\u{270D}', c: 'orange', p: 'medium', title: 'Write Longer Titles', desc: 'Average title is ' + avgTitleLen + ' characters. YouTube favors 50-70 character titles. Include your target keyword near the beginning.' });
-  if (avgHashtags < 3) suggestions.push({ icon: '\u{1F3F7}', c: 'orange', p: 'medium', title: 'Use More Hashtags', desc: 'Averaging ' + avgHashtags + ' hashtag(s) per video. Use 3-5 targeted hashtags per video to improve categorization and reach.' });
-  if (hasNumbers < Math.floor(videos.length * 0.3)) suggestions.push({ icon: '\u{1F522}', c: 'blue', p: 'low', title: 'Add Numbers to Titles', desc: 'Titles with numbers ("Top 10...", "5 Ways to...") get 30-40% higher click-through rates.' });
-  if (hasQuestions < 2) suggestions.push({ icon: '\u{2753}', c: 'blue', p: 'low', title: 'Use Question-Based Titles', desc: 'Question titles create curiosity loops that lift click-throughs. Try adding 1-2 per week.' });
-  if (parseFloat(viewsPerSub) < 3) suggestions.push({ icon: '\u{1F4AC}', c: 'red', p: 'high', title: 'Boost Viewer Engagement', desc: 'Views-per-subscriber: ' + viewsPerSub + 'x. Ask viewers to like, comment and subscribe at the 30% and 80% marks. Reply to every comment in the first 24 hours.' });
+  if (!hasDesc) suggestions.push({ icon: '+', c: 'red', p: 'high', title: 'Write a Channel Description', desc: 'No description found. A keyword-rich description helps YouTube categorize your content and improves search discoverability.' });
+  if (!hasBanner) suggestions.push({ icon: '+', c: 'orange', p: 'medium', title: 'Add a Channel Banner', desc: 'Missing channel banner. A professional banner boosts trust and subscriber conversion by up to 30%.' });
+  if (avgTitleLen < 30) suggestions.push({ icon: '+', c: 'orange', p: 'medium', title: 'Write Longer Titles', desc: 'Average title is ' + avgTitleLen + ' characters. YouTube favors 50-70 character titles. Include your target keyword near the beginning.' });
+  if (avgHashtags < 3) suggestions.push({ icon: '#', c: 'orange', p: 'medium', title: 'Use More Hashtags', desc: 'Averaging ' + avgHashtags + ' hashtag(s) per video. Use 3-5 targeted hashtags per video to improve categorization and reach.' });
+  if (hasNumbers < Math.floor(videos.length * 0.3)) suggestions.push({ icon: '1', c: 'blue', p: 'low', title: 'Add Numbers to Titles', desc: 'Titles with numbers ("Top 10...", "5 Ways to...") get 30-40% higher click-through rates.' });
+  if (hasQuestions < 2) suggestions.push({ icon: '?', c: 'blue', p: 'low', title: 'Use Question-Based Titles', desc: 'Question titles create curiosity loops that lift click-throughs. Try adding 1-2 per week.' });
+  if (parseFloat(viewsPerSub) < 3) suggestions.push({ icon: '+', c: 'red', p: 'high', title: 'Boost Viewer Engagement', desc: 'Views-per-subscriber: ' + viewsPerSub + 'x. Ask viewers to like, comment and subscribe at the 30% and 80% marks. Reply to every comment in the first 24 hours.' });
 
-  if (subs < 1000) suggestions.push({ icon: '\u{1F3AF}', c: 'red', p: 'high', title: 'Target 1,000 Subscribers', desc: 'You have ' + formatNumber(subs) + ' subscribers. At 1K you unlock monetization. Stay in one niche and cross-promote on TikTok/Instagram.' });
-  else if (subs < 10000) suggestions.push({ icon: '\u{1F4C8}', c: 'orange', p: 'medium', title: 'Push to 10,000 Subscribers', desc: formatNumber(subs) + ' subscribers. At 10K the algorithm promotes you more. Collaborate with similar channels and improve thumbnails.' });
+  if (subs < 1000) suggestions.push({ icon: '!', c: 'red', p: 'high', title: 'Target 1,000 Subscribers', desc: 'You have ' + formatNumber(subs) + ' subscribers. At 1K you unlock monetization. Stay in one niche and cross-promote on TikTok/Instagram.' });
+  else if (subs < 10000) suggestions.push({ icon: '+', c: 'orange', p: 'medium', title: 'Push to 10,000 Subscribers', desc: formatNumber(subs) + ' subscribers. At 10K the algorithm promotes you more. Collaborate with similar channels and improve thumbnails.' });
 
-  if (!hasShorts) suggestions.push({ icon: '\u{1F4F1}', c: 'blue', p: 'low', title: 'Create YouTube Shorts', desc: 'No Shorts detected. Shorts are heavily promoted and can grow subscribers 3-5x faster. Start with 3 Shorts per week.' });
+  if (!hasShorts) {
+    suggestions.push({ icon: '+', c: 'blue', p: 'low', title: 'Create YouTube Shorts', desc: 'No Shorts detected in recent videos. Shorts (under 60 seconds) are heavily promoted by YouTube and can grow your subscriber count 3-5x faster. Aim for 3 Shorts per week alongside your regular content.' });
+  } else if (shortsPercent < 20) {
+    suggestions.push({ icon: '+', c: 'blue', p: 'low', title: 'Post More YouTube Shorts', desc: 'Only ' + shortsPercent + '% of your recent videos are Shorts. Channels that mix long-form and Shorts grow faster. Try to bring Shorts up to 30-40% of your output.' });
+  }
 
-  if (!suggestions.length) suggestions.push({ icon: '\u{1F3C6}', c: 'green', p: 'low', title: 'Channel Looking Strong!', desc: 'All key metrics are healthy. Keep your upload schedule consistent, engage with your community, and run A/B tests on thumbnails.' });
+  if (!suggestions.length) suggestions.push({ icon: '*', c: 'green', p: 'low', title: 'Channel Looking Strong!', desc: 'All key metrics are healthy. Keep your upload schedule consistent, engage with your community, and run A/B tests on thumbnails.' });
 
   document.getElementById('ch-suggestion-items').innerHTML = suggestions.map(s =>
     '<div class="sug-item"><div class="sug-icon-wrap ' + s.c + '">' + s.icon + '</div><div style="flex:1;"><div class="sug-title">' + escHtml(s.title) + '</div><div class="sug-desc">' + escHtml(s.desc) + '</div></div><span class="sug-priority ' + s.p + '">' + s.p + '</span></div>'
